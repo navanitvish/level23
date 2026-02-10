@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 
 const ReraDetails = () => {
   const [activeTab, setActiveTab] = useState('rera-info');
-  const [showCostSheet, setShowCostSheet] = useState(false);
+  const [ setShowCostSheet] = useState(false);
   const [showMultipleUnits, setShowMultipleUnits] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [selectedUnits, setSelectedUnits] = useState([]);
 
   // RERA Project Details
-  const [reraData, setReraData] = useState({
+  const [reraData] = useState({
     projectName: 'Green Valley Apartments',
     developerName: 'Green Builders Ltd',
     reraNumber: 'P51800012345',
@@ -54,7 +54,7 @@ const ReraDetails = () => {
   });
 
   // Single Unit Cost Sheet
-  const [costSheet, setCostSheet] = useState({
+  const [costSheet] = useState({
     unitNumber: 'A-101',
     tower: 'Tower A',
     floor: '1st Floor',

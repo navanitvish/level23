@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -140,9 +141,9 @@ const Login = () => {
                       Remember me
                     </label>
                   </div>
-                  <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+                  <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
               </div>
 

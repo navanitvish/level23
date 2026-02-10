@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 
 const ChannelPartners = () => {
   const [showModal, setShowModal] = useState(false);
@@ -10,7 +10,7 @@ const ChannelPartners = () => {
   const [qrLink, setQrLink] = useState('');
   const [messageText, setMessageText] = useState('');
   const [sendingStatus, setSendingStatus] = useState('');
-  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: '',
     company: '',
