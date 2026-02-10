@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const ReraDetails = () => {
   const [activeTab, setActiveTab] = useState('rera-info');
@@ -182,7 +183,7 @@ const ReraDetails = () => {
               </div>
               <div style={styles.infoItem}>
                 <span style={styles.infoLabel}>RERA Website</span>
-                <span style={styles.infoValue}><a href="#">{reraData.reraWebsite}</a></span>
+                <span style={styles.infoValue}><Link to="/">{reraData.reraWebsite}</Link></span>
               </div>
               <div style={styles.infoItem}>
                 <span style={styles.infoLabel}>Project Address</span>

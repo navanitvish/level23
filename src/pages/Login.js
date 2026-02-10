@@ -211,10 +211,10 @@ const Login = () => {
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200 group">
+                <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200 group">
                   Sign up now
                   <span className="inline-block ml-1 transform group-hover:translate-x-1 transition-transform duration-200">→</span>
-                </a>
+                </Link>
               </p>
             </div>
           </div>
@@ -224,9 +224,9 @@ const Login = () => {
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
             By signing in, you agree to our{' '}
-            <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors duration-200">Terms</a>{' '}
+            <Link to="/terms" className="text-gray-600 hover:text-gray-800 transition-colors duration-200">Terms</Link>{' '}
             and{' '}
-            <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors duration-200">Privacy Policy</a>
+            <Link to="/privacy" className="text-gray-600 hover:text-gray-800 transition-colors duration-200">Privacy Policy</Link>
           </p>
         </div>
       </div>
