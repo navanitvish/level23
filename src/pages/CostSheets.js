@@ -4,17 +4,294 @@ const CostSheets = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
+  const [showCostSheetGenerator, setShowCostSheetGenerator] = useState(false);
 
-  const [newCostSheet, setNewCostSheet] = useState({
+  // Construction Link Plan Style Cost Sheet Generator State
+  const [costSheetForm, setCostSheetForm] = useState({
     projectName: '',
-    propertyType: 'apartment',
-    unitNumber: '',
-    basePrice: '',
-    area: '',
+    floor: '',
+    units: [
+      {
+        unitType: 'A',
+        carpetArea: '',
+        saleArea: '',
+        basicRate: 16000,
+      }
+    ],
+    charges: {
+      developmentCharges: 500,
+      dgBackup: 200,
+      recreationalFacilities: 200,
+      societyFormation: 100,
+      floorRise: 50,
+      otherCharges: 1000000,
+    }
   });
 
-  // Cost Sheet Templates
+  const addUnit = () => {
+    const unitTypes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const nextType = unitTypes[costSheetForm.units.length] || `Unit ${costSheetForm.units.length + 1}`;
+    
+    setCostSheetForm({
+      ...costSheetForm,
+      units: [
+        ...costSheetForm.units,
+        {
+          unitType: nextType,
+          carpetArea: '',
+          saleArea: '',
+          basicRate: 16000,
+        }
+      ]
+    });
+  };
+
+  const removeUnit = (index) => {
+    setCostSheetForm({
+      ...costSheetForm,
+      units: costSheetForm.units.filter((_, i) => i !== index)
+    });
+  };
+
+  const updateUnit = (index, field, value) => {
+    const newUnits = [...costSheetForm.units];
+    newUnits[index][field] = value;
+    setCostSheetForm({
+      ...costSheetForm,
+      units: newUnits
+    });
+  };
+
+  const updateCharge = (field, value) => {
+    setCostSheetForm({
+      ...costSheetForm,
+      charges: {
+        ...costSheetForm.charges,
+        [field]: value
+      }
+    });
+  };
+
+  const calculateUnitCosts = (unit) => {
+    const saleArea = parseFloat(unit.saleArea) || 0;
+    const basicRate = parseFloat(unit.basicRate) || 0;
+    
+    const basicAmount = saleArea * basicRate;
+    const developmentCharges = saleArea * (costSheetForm.charges.developmentCharges || 0);
+    const dgBackup = saleArea * (costSheetForm.charges.dgBackup || 0);
+    const recreationalFacilities = saleArea * (costSheetForm.charges.recreationalFacilities || 0);
+    const societyFormation = saleArea * (costSheetForm.charges.societyFormation || 0);
+    const floorRise = saleArea * (costSheetForm.charges.floorRise || 0);
+    const otherCharges = parseFloat(costSheetForm.charges.otherCharges) || 0;
+    
+    const total = basicAmount + developmentCharges + dgBackup + recreationalFacilities + 
+                  societyFormation + floorRise + otherCharges;
+    
+    return {
+      basicAmount,
+      developmentCharges,
+      dgBackup,
+      recreationalFacilities,
+      societyFormation,
+      floorRise,
+      otherCharges,
+      total
+    };
+  };
+
+  const generateCostSheet = () => {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-6">
+          <h2 className="text-2xl font-bold text-white text-center">
+            COST SHEET (CONSTRUCTION LINK PLAN)
+          </h2>
+          {costSheetForm.projectName && (
+            <p className="text-slate-200 text-center mt-2">{costSheetForm.projectName}</p>
+          )}
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-gray-300">
+                <th className="px-4 py-3 text-left font-bold text-gray-900"></th>
+                <th className="px-4 py-3 text-center font-bold text-gray-900 border-l border-gray-300">Unit Type</th>
+                {costSheetForm.units.map((unit, index) => (
+                  <th key={index} className="px-4 py-3 text-center font-bold text-gray-900 border-l border-gray-300">
+                    {unit.unitType}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Floor Row */}
+              <tr className="border-b border-gray-300 bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-semibold text-gray-900"></td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">Floor</td>
+                {costSheetForm.units.map((unit, index) => (
+                  <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                    {costSheetForm.floor || '-'}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Carpet Area Row */}
+              <tr className="border-b border-gray-300 bg-gray-50 hover:bg-gray-100">
+                <td className="px-4 py-3 font-semibold text-gray-900"></td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">Carpet Area (Sq.ft.)</td>
+                {costSheetForm.units.map((unit, index) => (
+                  <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                    {unit.carpetArea || '-'}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Sale Area Row */}
+              <tr className="border-b border-gray-300 bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-semibold text-gray-900"></td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">Sale Area (Sq.ft.)</td>
+                {costSheetForm.units.map((unit, index) => (
+                  <td key={index} className="px-4 py-3 text-center border-l border-gray-300 font-semibold">
+                    {unit.saleArea || '-'}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Basic Rate Row */}
+              <tr className="border-b-2 border-gray-400 bg-blue-50 hover:bg-blue-100">
+                <td className="px-4 py-3 font-bold text-gray-900">Basic Rate</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.units[0]?.basicRate.toLocaleString('en-IN') || '16,000'}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300 font-bold text-blue-700">
+                      ₹ {costs.basicAmount.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Development Charges */}
+              <tr className="border-b border-gray-300 bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-semibold text-gray-900">Development Charges</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.charges.developmentCharges}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.developmentCharges.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* DG Backup */}
+              <tr className="border-b border-gray-300 bg-gray-50 hover:bg-gray-100">
+                <td className="px-4 py-3 font-semibold text-gray-900">DG Backup</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.charges.dgBackup}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.dgBackup.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Recreational Facilities */}
+              <tr className="border-b border-gray-300 bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-semibold text-gray-900">Recreational Facilities</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.charges.recreationalFacilities}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.recreationalFacilities.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Society Formation */}
+              <tr className="border-b border-gray-300 bg-gray-50 hover:bg-gray-100">
+                <td className="px-4 py-3 font-semibold text-gray-900">Society Formation and Legal Charges</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.charges.societyFormation}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.societyFormation.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Floor Rise */}
+              <tr className="border-b border-gray-300 bg-white hover:bg-gray-50">
+                <td className="px-4 py-3 font-semibold text-gray-900">Floor Rise</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300">₹ {costSheetForm.charges.floorRise}</td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.floorRise.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Other Charges */}
+              <tr className="border-b-2 border-gray-400 bg-gray-50 hover:bg-gray-100">
+                <td className="px-4 py-3 font-semibold text-gray-900">Other Charges</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700 border-l border-gray-300"></td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-3 text-center border-l border-gray-300">
+                      ₹ {costs.otherCharges.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Total Row */}
+              <tr className="bg-gradient-to-r from-emerald-600 to-emerald-700 border-t-4 border-emerald-800">
+                <td className="px-4 py-4 font-bold text-white text-lg">Total</td>
+                <td className="px-4 py-4 text-center font-bold text-white border-l border-emerald-500"></td>
+                {costSheetForm.units.map((unit, index) => {
+                  const costs = calculateUnitCosts(unit);
+                  return (
+                    <td key={index} className="px-4 py-4 text-center border-l border-emerald-500 font-bold text-white text-lg">
+                      ₹ {costs.total.toLocaleString('en-IN')}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+          <button 
+            onClick={() => window.print()}
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all"
+          >
+            Print / Download PDF
+          </button>
+          <button 
+            onClick={() => setShowCostSheetGenerator(false)}
+            className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+          >
+            Edit Details
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const costSheetTemplates = [
     {
       id: 1,
@@ -30,7 +307,7 @@ const CostSheets = () => {
         developmentCharges: 150000,
         maintenanceDeposit: 100000,
         legalCharges: 75000,
-        gst: 1296750, // 18% on total
+        gst: 1296750,
       },
       total: 10121750,
       status: 'Active',
@@ -46,12 +323,12 @@ const CostSheets = () => {
       breakdown: {
         basePrice: 12000000,
         plcCharges: 800000,
-        carParking: 0, // Included
+        carParking: 0,
         clubMembership: 500000,
         developmentCharges: 300000,
         maintenanceDeposit: 200000,
         legalCharges: 150000,
-        gst: 2511000, // 18% on total
+        gst: 2511000,
       },
       total: 16461000,
       status: 'Active',
@@ -72,75 +349,12 @@ const CostSheets = () => {
         developmentCharges: 250000,
         maintenanceDeposit: 150000,
         legalCharges: 100000,
-        gst: 1998000, // 18% on total
+        gst: 1998000,
       },
       total: 13098000,
       status: 'Active',
       createdDate: '2026-01-10',
       project: 'Business Park',
-    },
-    {
-      id: 4,
-      name: 'Penthouse - 5BHK Premium',
-      propertyType: 'Penthouse',
-      area: '3200',
-      basePrice: '2,50,00,000',
-      breakdown: {
-        basePrice: 25000000,
-        plcCharges: 1500000,
-        carParking: 600000,
-        clubMembership: 750000,
-        developmentCharges: 500000,
-        maintenanceDeposit: 300000,
-        legalCharges: 200000,
-        gst: 5193000, // 18% on total
-      },
-      total: 34043000,
-      status: 'Draft',
-      createdDate: '2026-01-08',
-      project: 'Premium Heights',
-    },
-    {
-      id: 5,
-      name: 'Plot - Residential',
-      propertyType: 'Plot',
-      area: '2000',
-      basePrice: '60,00,000',
-      breakdown: {
-        basePrice: 6000000,
-        plcCharges: 300000,
-        carParking: 0,
-        clubMembership: 0,
-        developmentCharges: 100000,
-        maintenanceDeposit: 0,
-        legalCharges: 80000,
-        gst: 1166400, // 18% on total
-      },
-      total: 7646400,
-      status: 'Active',
-      createdDate: '2026-01-05',
-      project: 'Lake View Plots',
-    },
-    {
-      id: 6,
-      name: 'Studio Apartment',
-      propertyType: 'Apartment',
-      area: '650',
-      basePrice: '28,00,000',
-      breakdown: {
-        basePrice: 2800000,
-        plcCharges: 150000,
-        carParking: 150000,
-        clubMembership: 100000,
-        developmentCharges: 50000,
-        maintenanceDeposit: 40000,
-        legalCharges: 30000,
-        gst: 578400, // 18% on total
-      },
-      total: 3898400,
-      status: 'Active',
-      createdDate: '2026-01-03',
-      project: 'Urban Living',
     },
   ];
 
@@ -231,6 +445,227 @@ const CostSheets = () => {
     return '₹' + amount.toLocaleString('en-IN');
   };
 
+  if (showCostSheetGenerator) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => setShowCostSheetGenerator(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Construction Link Plan Cost Sheet</h1>
+            <p className="text-gray-600 mt-1">Fill in the details to generate your cost sheet</p>
+          </div>
+        </div>
+
+        {/* Cost Sheet Form */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Project Name</label>
+              <input
+                type="text"
+                value={costSheetForm.projectName}
+                onChange={(e) => setCostSheetForm({...costSheetForm, projectName: e.target.value})}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Skyline Heights"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Floor Number</label>
+              <input
+                type="text"
+                value={costSheetForm.floor}
+                onChange={(e) => setCostSheetForm({...costSheetForm, floor: e.target.value})}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., 7"
+              />
+            </div>
+          </div>
+
+          {/* Rate Configuration */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Rate Configuration (₹ per sq.ft.)</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Basic Rate</label>
+                <input
+                  type="number"
+                  value={costSheetForm.units[0]?.basicRate || ''}
+                  onChange={(e) => {
+                    const newUnits = costSheetForm.units.map(unit => ({
+                      ...unit,
+                      basicRate: parseFloat(e.target.value) || 0
+                    }));
+                    setCostSheetForm({...costSheetForm, units: newUnits});
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="16000"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Development</label>
+                <input
+                  type="number"
+                  value={costSheetForm.charges.developmentCharges}
+                  onChange={(e) => updateCharge('developmentCharges', parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">DG Backup</label>
+                <input
+                  type="number"
+                  value={costSheetForm.charges.dgBackup}
+                  onChange={(e) => updateCharge('dgBackup', parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="200"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Recreation</label>
+                <input
+                  type="number"
+                  value={costSheetForm.charges.recreationalFacilities}
+                  onChange={(e) => updateCharge('recreationalFacilities', parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="200"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Society/Legal</label>
+                <input
+                  type="number"
+                  value={costSheetForm.charges.societyFormation}
+                  onChange={(e) => updateCharge('societyFormation', parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Floor Rise</label>
+                <input
+                  type="number"
+                  value={costSheetForm.charges.floorRise}
+                  onChange={(e) => updateCharge('floorRise', parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="50"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Other Charges (Fixed Amount)</label>
+              <input
+                type="number"
+                value={costSheetForm.charges.otherCharges}
+                onChange={(e) => updateCharge('otherCharges', parseFloat(e.target.value) || 0)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="1000000"
+              />
+            </div>
+          </div>
+
+          {/* Units Configuration */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Unit Details</h3>
+              <button
+                onClick={addUnit}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm"
+              >
+                + Add Unit
+              </button>
+            </div>
+            <div className="space-y-4">
+              {costSheetForm.units.map((unit, index) => (
+                <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="flex-none w-20">
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">Unit Type</label>
+                    <input
+                      type="text"
+                      value={unit.unitType}
+                      onChange={(e) => updateUnit(index, 'unitType', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-bold"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">Carpet Area (sq.ft.)</label>
+                    <input
+                      type="number"
+                      value={unit.carpetArea}
+                      onChange={(e) => updateUnit(index, 'carpetArea', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="685"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">Sale Area (sq.ft.)</label>
+                    <input
+                      type="number"
+                      value={unit.saleArea}
+                      onChange={(e) => updateUnit(index, 'saleArea', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="1370"
+                    />
+                  </div>
+                  <div className="flex-none">
+                    <label className="block text-xs font-semibold text-gray-700 mb-2 opacity-0">Remove</label>
+                    {costSheetForm.units.length > 1 && (
+                      <button
+                        onClick={() => removeUnit(index)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+            <button
+              onClick={() => setShowCostSheetGenerator(false)}
+              className="px-6 py-2.5 text-gray-700 font-semibold border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                // Validate that at least one unit has sale area
+                const hasValidUnit = costSheetForm.units.some(u => u.saleArea && parseFloat(u.saleArea) > 0);
+                if (!hasValidUnit) {
+                  alert('Please add at least one unit with sale area');
+                  return;
+                }
+                window.scrollTo(0, 0);
+              }}
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all"
+            >
+              Generate Cost Sheet
+            </button>
+          </div>
+        </div>
+
+        {/* Generated Cost Sheet Preview */}
+        {costSheetForm.units.some(u => u.saleArea && parseFloat(u.saleArea) > 0) && (
+          <div className="mt-8">
+            {generateCostSheet()}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -268,13 +703,13 @@ const CostSheets = () => {
             </button>
           </div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setShowCostSheetGenerator(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-sm hover:shadow-md font-semibold"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Create Cost Sheet
+            Create Construction Link Plan
           </button>
         </div>
       </div>
@@ -341,7 +776,6 @@ const CostSheets = () => {
                   key={template.id}
                   className="bg-white border border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 overflow-hidden group"
                 >
-                  {/* Card Header */}
                   <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -358,7 +792,6 @@ const CostSheets = () => {
                     </div>
                   </div>
 
-                  {/* Card Body */}
                   <div className="p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getPropertyTypeColor(template.propertyType)}`}>
@@ -455,7 +888,6 @@ const CostSheets = () => {
       {selectedTemplate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 sticky top-0 z-10">
               <div className="flex items-start justify-between">
                 <div>
@@ -473,9 +905,7 @@ const CostSheets = () => {
               </div>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 space-y-6">
-              {/* Property Info */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-blue-50 rounded-xl p-4">
                   <p className="text-sm text-gray-600 mb-1">Property Type</p>
@@ -491,7 +921,6 @@ const CostSheets = () => {
                 </div>
               </div>
 
-              {/* Cost Breakdown */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Cost Breakdown</h3>
                 <div className="space-y-3">
@@ -507,7 +936,6 @@ const CostSheets = () => {
                       gst: 'GST (18%)',
                     };
                     const isGST = key === 'gst';
-                    const isTotal = key === 'total';
                     
                     return (
                       <div
@@ -528,7 +956,6 @@ const CostSheets = () => {
                 </div>
               </div>
 
-              {/* Total */}
               <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-xl">
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold">Total Cost</span>
@@ -536,7 +963,6 @@ const CostSheets = () => {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3">
                 <button className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all">
                   Download PDF
@@ -545,67 +971,6 @@ const CostSheets = () => {
                   Duplicate Template
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Modal (Placeholder) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-white">Create New Cost Sheet</h2>
-              <p className="text-blue-100 text-sm mt-1">Fill in the details to generate a cost breakdown</p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Project Name</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="e.g., Skyline Towers"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Property Type</label>
-                <select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                  <option>Apartment</option>
-                  <option>Villa</option>
-                  <option>Penthouse</option>
-                  <option>Plot</option>
-                  <option>Commercial</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Area (sq ft)</label>
-                  <input
-                    type="number"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="1850"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Base Price (₹)</label>
-                  <input
-                    type="number"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="7500000"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 text-gray-700 font-semibold border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-sm">
-                Generate Cost Sheet
-              </button>
             </div>
           </div>
         </div>
