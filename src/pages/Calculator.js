@@ -86,239 +86,363 @@ const Calculator = () => {
     setAreaResult(result.toFixed(4));
   };
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Real Estate Calculator</h1>
-      <p style={styles.description}>Calculate EMI, stamp duty, and convert area units easily.</p>
+  const formatCurrency = (amount) => {
+    return '₹' + parseFloat(amount).toLocaleString('en-IN');
+  };
 
-      <div style={styles.tabs}>
-        <button
-          style={activeTab === 'emi' ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab('emi')}
-        >
-          EMI Calculator
-        </button>
-        <button
-          style={activeTab === 'stamp' ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab('stamp')}
-        >
-          Stamp Duty Calculator
-        </button>
-        <button
-          style={activeTab === 'area' ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab('area')}
-        >
-          Area Converter
-        </button>
+  const calculatePercentages = () => {
+    if (!emiResult) return { principal: 50, interest: 50 };
+    const principal = parseFloat(emiResult.principal);
+    const interest = parseFloat(emiResult.totalInterest);
+    const total = principal + interest;
+    return {
+      principal: ((principal / total) * 100).toFixed(1),
+      interest: ((interest / total) * 100).toFixed(1),
+    };
+  };
+
+  const percentages = calculatePercentages();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Real Estate Calculator</h1>
+        <p className="text-gray-600 mt-1">Calculate EMI, stamp duty, and convert area units easily</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-3">
+        {[
+          { id: 'emi', label: 'EMI Calculator', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1' },
+          { id: 'stamp', label: 'Stamp Duty', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+          { id: 'area', label: 'Area Converter', icon: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === tab.id
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
+                : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300 hover:shadow-sm'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+            </svg>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* EMI Calculator */}
       {activeTab === 'emi' && (
-        <div style={styles.calculatorSection}>
-          <h2 style={styles.sectionTitle}>Home Loan EMI Calculator</h2>
-          
-          <div style={styles.inputGrid}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Loan Amount (₹)</label>
-              <input
-                type="number"
-                value={loanAmount}
-                onChange={(e) => setLoanAmount(e.target.value)}
-                style={styles.input}
-              />
-              <input
-                type="range"
-                min="100000"
-                max="50000000"
-                step="100000"
-                value={loanAmount}
-                onChange={(e) => setLoanAmount(e.target.value)}
-                style={styles.range}
-              />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
             </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Interest Rate (% per annum)</label>
-              <input
-                type="number"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                step="0.1"
-                style={styles.input}
-              />
-              <input
-                type="range"
-                min="5"
-                max="15"
-                step="0.1"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                style={styles.range}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Loan Tenure (Years)</label>
-              <input
-                type="number"
-                value={loanTenure}
-                onChange={(e) => setLoanTenure(e.target.value)}
-                style={styles.input}
-              />
-              <input
-                type="range"
-                min="1"
-                max="30"
-                step="1"
-                value={loanTenure}
-                onChange={(e) => setLoanTenure(e.target.value)}
-                style={styles.range}
-              />
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Home Loan EMI Calculator</h2>
           </div>
 
-          <button style={styles.calculateButton} onClick={calculateEMI}>
-            Calculate EMI
-          </button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Input Section */}
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-gray-700">Loan Amount</label>
+                  <span className="text-lg font-bold text-blue-600">{formatCurrency(loanAmount)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="100000"
+                  max="50000000"
+                  step="100000"
+                  value={loanAmount}
+                  onChange={(e) => setLoanAmount(e.target.value)}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>₹1L</span>
+                  <span>₹5Cr</span>
+                </div>
+              </div>
 
-          {emiResult && (
-            <div style={styles.resultSection}>
-              <h3 style={styles.resultTitle}>EMI Calculation Result</h3>
-              <div style={styles.resultCard}>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Monthly EMI</span>
-                  <span style={styles.resultValueHighlight}>₹ {parseFloat(emiResult.emi).toLocaleString()}</span>
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-gray-700">Interest Rate (% per annum)</label>
+                  <span className="text-lg font-bold text-emerald-600">{interestRate}%</span>
                 </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Total Interest Payable</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(emiResult.totalInterest).toLocaleString()}</span>
-                </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Total Amount Payable</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(emiResult.totalAmount).toLocaleString()}</span>
-                </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Principal Amount</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(emiResult.principal).toLocaleString()}</span>
+                <input
+                  type="range"
+                  min="5"
+                  max="15"
+                  step="0.1"
+                  value={interestRate}
+                  onChange={(e) => setInterestRate(e.target.value)}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>5%</span>
+                  <span>15%</span>
                 </div>
               </div>
-              
-              <div style={styles.chartPlaceholder}>
-                <div style={styles.chartBar}>
-                  <div style={{ ...styles.bar, width: '50%', backgroundColor: '#3498db' }}></div>
+
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-gray-700">Loan Tenure (Years)</label>
+                  <span className="text-lg font-bold text-violet-600">{loanTenure} Years</span>
                 </div>
-                <div style={styles.chartLegend}>
-                  <span><span style={{ ...styles.legendColor, backgroundColor: '#3498db' }}></span> Principal (50%)</span>
-                  <span><span style={{ ...styles.legendColor, backgroundColor: '#e74c3c' }}></span> Interest (50%)</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  step="1"
+                  value={loanTenure}
+                  onChange={(e) => setLoanTenure(e.target.value)}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>1 Year</span>
+                  <span>30 Years</span>
                 </div>
               </div>
+
+              <button
+                onClick={calculateEMI}
+                className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-md hover:shadow-lg"
+              >
+                Calculate EMI
+              </button>
             </div>
-          )}
+
+            {/* Result Section */}
+            {emiResult && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl p-6 text-white">
+                  <p className="text-sm opacity-90 mb-1">Monthly EMI</p>
+                  <p className="text-4xl font-bold">{formatCurrency(emiResult.emi)}</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl">
+                    <span className="text-sm font-semibold text-gray-700">Principal Amount</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(emiResult.principal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-amber-50 rounded-xl">
+                    <span className="text-sm font-semibold text-gray-700">Total Interest</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(emiResult.totalInterest)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-violet-50 rounded-xl">
+                    <span className="text-sm font-semibold text-gray-700">Total Amount</span>
+                    <span className="font-bold text-gray-900">{formatCurrency(emiResult.totalAmount)}</span>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="bg-gray-50 rounded-xl p-5">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Payment Breakdown</h4>
+                  <div className="flex h-8 rounded-lg overflow-hidden mb-3">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-semibold"
+                      style={{ width: `${percentages.principal}%` }}
+                    >
+                      {percentages.principal}%
+                    </div>
+                    <div 
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white text-xs font-semibold"
+                      style={{ width: `${percentages.interest}%` }}
+                    >
+                      {percentages.interest}%
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded"></div>
+                      <span className="text-gray-600">Principal</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded"></div>
+                      <span className="text-gray-600">Interest</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Stamp Duty Calculator */}
       {activeTab === 'stamp' && (
-        <div style={styles.calculatorSection}>
-          <h2 style={styles.sectionTitle}>Stamp Duty & Registration Calculator</h2>
-          
-          <div style={styles.inputGrid}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Property Value (₹)</label>
-              <input
-                type="number"
-                value={propertyValue}
-                onChange={(e) => setPropertyValue(e.target.value)}
-                style={styles.input}
-              />
-              <input
-                type="range"
-                min="100000"
-                max="50000000"
-                step="100000"
-                value={propertyValue}
-                onChange={(e) => setPropertyValue(e.target.value)}
-                style={styles.range}
-              />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>State</label>
-              <select
-                value={stateCode}
-                onChange={(e) => setStateCode(e.target.value)}
-                style={styles.select}
-              >
-                <option value="maharashtra">Maharashtra</option>
-                <option value="delhi">Delhi</option>
-                <option value="karnataka">Karnataka</option>
-                <option value="gujarat">Gujarat</option>
-                <option value="rajasthan">Rajasthan</option>
-              </select>
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Property Type</label>
-              <select
-                value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
-                style={styles.select}
-              >
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-              </select>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Stamp Duty & Registration Calculator</h2>
           </div>
 
-          <button style={styles.calculateButton} onClick={calculateStampDuty}>
-            Calculate Stamp Duty
-          </button>
-
-          {stampDutyResult && (
-            <div style={styles.resultSection}>
-              <h3 style={styles.resultTitle}>Stamp Duty Calculation Result</h3>
-              <div style={styles.resultCard}>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Stamp Duty ({stampDutyResult.stampDutyRate}%)</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(stampDutyResult.stampDuty).toLocaleString()}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Input Section */}
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-gray-700">Property Value</label>
+                  <span className="text-lg font-bold text-violet-600">{formatCurrency(propertyValue)}</span>
                 </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Registration Fee (1%)</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(stampDutyResult.registrationFee).toLocaleString()}</span>
-                </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>GST (5%)</span>
-                  <span style={styles.resultValue}>₹ {parseFloat(stampDutyResult.gst).toLocaleString()}</span>
-                </div>
-                <div style={styles.resultRow}>
-                  <span style={styles.resultLabel}>Total Charges</span>
-                  <span style={styles.resultValueHighlight}>₹ {parseFloat(stampDutyResult.total).toLocaleString()}</span>
+                <input
+                  type="range"
+                  min="100000"
+                  max="50000000"
+                  step="100000"
+                  value={propertyValue}
+                  onChange={(e) => setPropertyValue(e.target.value)}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>₹1L</span>
+                  <span>₹5Cr</span>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                <select
+                  value={stateCode}
+                  onChange={(e) => setStateCode(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all appearance-none bg-white"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
+                >
+                  <option value="maharashtra">Maharashtra</option>
+                  <option value="delhi">Delhi</option>
+                  <option value="karnataka">Karnataka</option>
+                  <option value="gujarat">Gujarat</option>
+                  <option value="rajasthan">Rajasthan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Property Type</label>
+                <select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all appearance-none bg-white"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
+                >
+                  <option value="residential">Residential</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+              </div>
+
+              <button
+                onClick={calculateStampDuty}
+                className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+              >
+                Calculate Stamp Duty
+              </button>
             </div>
-          )}
+
+            {/* Result Section */}
+            {stampDutyResult && (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div>
+                      <span className="text-sm font-semibold text-gray-700">Stamp Duty</span>
+                      <p className="text-xs text-gray-500 mt-0.5">{stampDutyResult.stampDutyRate}% of property value</p>
+                    </div>
+                    <span className="font-bold text-gray-900">{formatCurrency(stampDutyResult.stampDuty)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div>
+                      <span className="text-sm font-semibold text-gray-700">Registration Fee</span>
+                      <p className="text-xs text-gray-500 mt-0.5">1% of property value</p>
+                    </div>
+                    <span className="font-bold text-gray-900">{formatCurrency(stampDutyResult.registrationFee)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-amber-50 rounded-xl border border-amber-200">
+                    <div>
+                      <span className="text-sm font-semibold text-gray-700">GST</span>
+                      <p className="text-xs text-gray-500 mt-0.5">5% of property value</p>
+                    </div>
+                    <span className="font-bold text-gray-900">{formatCurrency(stampDutyResult.gst)}</span>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-violet-500 to-purple-500 rounded-2xl p-6 text-white">
+                  <p className="text-sm opacity-90 mb-1">Total Charges</p>
+                  <p className="text-4xl font-bold">{formatCurrency(stampDutyResult.total)}</p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Note</p>
+                      <p className="text-xs text-gray-700 mt-1">Stamp duty rates may vary. Check with local authorities for exact rates.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Area Converter */}
       {activeTab === 'area' && (
-        <div style={styles.calculatorSection}>
-          <h2 style={styles.sectionTitle}>Area Unit Converter</h2>
-          
-          <div style={styles.converterBox}>
-            <div style={styles.converterRow}>
-              <div style={styles.converterGroup}>
-                <label style={styles.label}>From</label>
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Area Unit Converter</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* From */}
+              <div className="space-y-4">
+                <label className="block text-sm font-semibold text-gray-700">From</label>
                 <input
                   type="number"
                   value={areaValue}
                   onChange={(e) => setAreaValue(e.target.value)}
-                  style={styles.input}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-lg font-semibold"
+                  placeholder="Enter value"
                 />
                 <select
                   value={fromUnit}
                   onChange={(e) => setFromUnit(e.target.value)}
-                  style={styles.select}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all appearance-none bg-white"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                 >
                   <option value="sqft">Square Feet (sqft)</option>
                   <option value="sqm">Square Meters (sqm)</option>
@@ -328,18 +452,26 @@ const Calculator = () => {
                 </select>
               </div>
 
-              <div style={styles.converterGroup}>
-                <label style={styles.label}>To</label>
+              {/* To */}
+              <div className="space-y-4">
+                <label className="block text-sm font-semibold text-gray-700">To</label>
                 <input
                   type="text"
-                  value={areaResult || ''}
+                  value={areaResult || '0'}
                   readOnly
-                  style={styles.input}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-lg font-semibold text-gray-900"
                 />
                 <select
                   value={toUnit}
                   onChange={(e) => setToUnit(e.target.value)}
-                  style={styles.select}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all appearance-none bg-white"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                 >
                   <option value="sqft">Square Feet (sqft)</option>
                   <option value="sqm">Square Meters (sqm)</option>
@@ -350,314 +482,147 @@ const Calculator = () => {
               </div>
             </div>
 
-            <button style={styles.calculateButton} onClick={convertArea}>
+            <button
+              onClick={convertArea}
+              className="w-full mt-6 py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold rounded-xl hover:from-amber-700 hover:to-orange-700 transition-all shadow-md hover:shadow-lg"
+            >
               Convert
             </button>
           </div>
 
-          <div style={styles.conversionTable}>
-            <h3 style={styles.tableTitle}>Quick Reference</h3>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Unit</th>
-                  <th style={styles.th}>1 sqft =</th>
-                  <th style={styles.th}>1 sqm =</th>
-                  <th style={styles.th}>1 sqyd =</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={styles.td}>sqft</td>
-                  <td style={styles.td}>1</td>
-                  <td style={styles.td}>10.764</td>
-                  <td style={styles.td}>9</td>
-                </tr>
-                <tr>
-                  <td style={styles.td}>sqm</td>
-                  <td style={styles.td}>0.0929</td>
-                  <td style={styles.td}>1</td>
-                  <td style={styles.td}>0.836</td>
-                </tr>
-                <tr>
-                  <td style={styles.td}>sqyd</td>
-                  <td style={styles.td}>0.111</td>
-                  <td style={styles.td}>1.196</td>
-                  <td style={styles.td}>1</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Conversion Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Reference Table</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tl-lg">Unit</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">1 sqft =</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">1 sqm =</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tr-lg">1 sqyd =</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-gray-900">sqft</td>
+                    <td className="px-4 py-3 text-gray-600">1</td>
+                    <td className="px-4 py-3 text-gray-600">10.764</td>
+                    <td className="px-4 py-3 text-gray-600">9</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-gray-900">sqm</td>
+                    <td className="px-4 py-3 text-gray-600">0.0929</td>
+                    <td className="px-4 py-3 text-gray-600">1</td>
+                    <td className="px-4 py-3 text-gray-600">0.836</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-gray-900">sqyd</td>
+                    <td className="px-4 py-3 text-gray-600">0.111</td>
+                    <td className="px-4 py-3 text-gray-600">1.196</td>
+                    <td className="px-4 py-3 text-gray-600">1</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Calculator Info Cards */}
-      <div style={styles.infoSection}>
-        <h2 style={styles.sectionTitle}>Quick Tips</h2>
-        <div style={styles.infoGrid}>
-          <div style={styles.infoCard}>
-            <h3 style={styles.infoTitle}>EMI Tips</h3>
-            <ul style={styles.infoList}>
-              <li>Keep EMI under 40% of monthly income</li>
-              <li>Compare interest rates from multiple banks</li>
-              <li>Consider shorter tenure for less interest</li>
-              <li>Prepayment reduces interest burden</li>
+      {/* Tips Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Tips</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-gray-900">EMI Tips</h3>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-1">•</span>
+                <span>Keep EMI under 40% of monthly income</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-1">•</span>
+                <span>Compare rates from multiple banks</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-1">•</span>
+                <span>Shorter tenure = less interest</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-1">•</span>
+                <span>Prepayment reduces total burden</span>
+              </li>
             </ul>
           </div>
-          <div style={styles.infoCard}>
-            <h3 style={styles.infoTitle}>Stamp Duty Tips</h3>
-            <ul style={styles.infoList}>
-              <li>Stamp duty rates vary by state</li>
-              <li>Timely payment avoids penalties</li>
-              <li>Registration within 4 months required</li>
-              <li>Digital registration available in many states</li>
+
+          <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-violet-500 rounded-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-gray-900">Stamp Duty Tips</h3>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-violet-600 mt-1">•</span>
+                <span>Rates vary by state</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-600 mt-1">•</span>
+                <span>Pay on time to avoid penalties</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-600 mt-1">•</span>
+                <span>Register within 4 months</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-600 mt-1">•</span>
+                <span>Digital registration available</span>
+              </li>
             </ul>
           </div>
-          <div style={styles.infoCard}>
-            <h3 style={styles.infoTitle}>Area Conversion</h3>
-            <ul style={styles.infoList}>
-              <li>1 acre = 43,560 sqft</li>
-              <li>1 hectare = 107,639 sqft</li>
-              <li>1 sqyd = 9 sqft</li>
-              <li>1 sqm = 10.764 sqft</li>
+
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-gray-900">Area Conversions</h3>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-amber-600 mt-1">•</span>
+                <span>1 acre = 43,560 sqft</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-600 mt-1">•</span>
+                <span>1 hectare = 107,639 sqft</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-600 mt-1">•</span>
+                <span>1 sqyd = 9 sqft</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-600 mt-1">•</span>
+                <span>1 sqm = 10.764 sqft</span>
+              </li>
             </ul>
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'Arial, sans-serif',
-    lineHeight: '1.6',
-    color: '#333',
-  },
-  title: {
-    fontSize: '2.5rem',
-    color: '#2c3e50',
-    marginBottom: '10px',
-    borderBottom: '2px solid #3498db',
-    paddingBottom: '10px',
-  },
-  description: {
-    fontSize: '1.1rem',
-    color: '#7f8c8d',
-    marginBottom: '30px',
-  },
-  tabs: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '30px',
-    flexWrap: 'wrap',
-  },
-  tab: {
-    padding: '12px 25px',
-    backgroundColor: '#f8f9fa',
-    border: '2px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-  },
-  activeTab: {
-    padding: '12px 25px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: '2px solid #3498db',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  calculatorSection: {
-    backgroundColor: '#f8f9fa',
-    padding: '30px',
-    borderRadius: '10px',
-    marginBottom: '30px',
-  },
-  sectionTitle: {
-    fontSize: '1.5rem',
-    color: '#2c3e50',
-    marginBottom: '25px',
-  },
-  inputGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '20px',
-    marginBottom: '25px',
-  },
-  inputGroup: {
-    marginBottom: '15px',
-  },
-  label: {
-    display: 'block',
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    color: '#2c3e50',
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    marginBottom: '10px',
-  },
-  select: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    backgroundColor: '#fff',
-  },
-  range: {
-    width: '100%',
-    cursor: 'pointer',
-  },
-  calculateButton: {
-    padding: '15px 40px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1.1rem',
-    cursor: 'pointer',
-    display: 'block',
-    margin: '20px auto',
-  },
-  resultSection: {
-    marginTop: '30px',
-    paddingTop: '20px',
-    borderTop: '2px solid #ddd',
-  },
-  resultTitle: {
-    fontSize: '1.3rem',
-    color: '#2c3e50',
-    marginBottom: '20px',
-    textAlign: 'center',
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: '25px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  },
-  resultRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '12px 0',
-    borderBottom: '1px solid #eee',
-  },
-  resultLabel: {
-    color: '#7f8c8d',
-  },
-  resultValue: {
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  resultValueHighlight: {
-    fontWeight: 'bold',
-    color: '#27ae60',
-    fontSize: '1.2rem',
-  },
-  chartPlaceholder: {
-    marginTop: '20px',
-  },
-  chartBar: {
-    height: '30px',
-    backgroundColor: '#ecf0f1',
-    borderRadius: '5px',
-    overflow: 'hidden',
-    display: 'flex',
-  },
-  bar: {
-    height: '100%',
-    transition: 'width 0.5s',
-  },
-  chartLegend: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '20px',
-    marginTop: '10px',
-  },
-  legendColor: {
-    display: 'inline-block',
-    width: '15px',
-    height: '15px',
-    borderRadius: '3px',
-    marginRight: '5px',
-  },
-  converterBox: {
-    backgroundColor: '#fff',
-    padding: '30px',
-    borderRadius: '10px',
-    marginBottom: '30px',
-  },
-  converterRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '30px',
-  },
-  converterGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  conversionTable: {
-    marginTop: '30px',
-  },
-  tableTitle: {
-    fontSize: '1.2rem',
-    color: '#2c3e50',
-    marginBottom: '15px',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: '#fff',
-    borderRadius: '10px',
-    overflow: 'hidden',
-  },
-  th: {
-    backgroundColor: '#3498db',
-    color: '#fff',
-    padding: '12px',
-    textAlign: 'left',
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-  },
-  infoSection: {
-    marginTop: '30px',
-  },
-  infoGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '20px',
-  },
-  infoCard: {
-    backgroundColor: '#f8f9fa',
-    padding: '25px',
-    borderRadius: '10px',
-    border: '1px solid #eee',
-  },
-  infoTitle: {
-    fontSize: '1.1rem',
-    color: '#2c3e50',
-    marginBottom: '15px',
-    borderBottom: '2px solid #3498db',
-    paddingBottom: '10px',
-  },
-  infoList: {
-    marginLeft: '20px',
-    color: '#7f8c8d',
-  },
 };
 
 export default Calculator;

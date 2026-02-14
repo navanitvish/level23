@@ -17,6 +17,7 @@ import ChannelPartners from './pages/ChannelPartners';
 import Calculator from './pages/Calculator';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
+import ManageCategories from './pages/categories/ManageCategories';
 
 function App() {
   const { user, loading } = useAuth();
@@ -37,9 +38,10 @@ function App() {
           ) : (
             <Navigate to="/login" />
           )
-        }
+        }  
       />
       <Route path="/inventory" element={user ? <Layout><Inventory /></Layout> : <Navigate to="/login" />} />
+      <Route path="/manage-categories" element={user ? <Layout><ManageCategories /></Layout> : <Navigate to="/login" />} />
       <Route path="/cost-sheets" element={user ? <Layout><CostSheets /></Layout> : <Navigate to="/login" />} />
       <Route path="/booking-forms" element={user ? <Layout><BookingForms /></Layout> : <Navigate to="/login" />} />
       <Route path="/rera-details" element={user ? <Layout><ReraDetails /></Layout> : <Navigate to="/login" />} />

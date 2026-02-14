@@ -29,7 +29,6 @@ const DemandLetter = () => {
     setFormData(prev => {
       const updated = { ...prev, [name]: newValue };
       
-      // Calculate GST and Total
       if (name === 'baseAmount' || name === 'gstRate' || name === 'includeGst') {
         const base = parseFloat(updated.baseAmount) || 0;
         const rate = parseFloat(updated.gstRate) || 0;
@@ -42,7 +41,6 @@ const DemandLetter = () => {
         }
       }
       
-      // Calculate installment amount
       if (name === 'totalAmount' || name === 'installments') {
         const total = parseFloat(updated.totalAmount) || 0;
         const inst = parseInt(updated.installments) || 1;
@@ -68,751 +66,536 @@ const DemandLetter = () => {
     }));
   };
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Demand Letter</h1>
-      <p style={styles.description}>Generate and manage demand letters with flexible payment schedules and GST calculation.</p>
+  const formatCurrency = (amount) => {
+    return '₹' + parseFloat(amount || 0).toLocaleString('en-IN');
+  };
 
-      <div style={styles.formSection}>
-        <h2 style={styles.sectionTitle}>Create New Demand Letter</h2>
+  const stats = [
+    { label: 'Total Letters', value: '156', change: '+12', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'blue' },
+    { label: 'Sent This Month', value: '45', change: '+8', icon: 'M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', color: 'emerald' },
+    { label: 'Pending Payment', value: '23', change: '-5', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'amber' },
+    { label: 'Total Amount', value: '₹2.8Cr', change: '+15%', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1', color: 'violet' }
+  ];
+
+  const getColorClasses = (color) => {
+    const colors = {
+      blue: { gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-600' },
+      emerald: { gradient: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-600' },
+      violet: { gradient: 'from-violet-500 to-violet-600', bg: 'bg-violet-50', text: 'text-violet-600' },
+      amber: { gradient: 'from-amber-500 to-amber-600', bg: 'bg-amber-50', text: 'text-amber-600' },
+    };
+    return colors[color];
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Demand Letter</h1>
+        <p className="text-gray-600 mt-1">Generate and manage demand letters with flexible payment schedules and GST calculation</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => {
+          const colorClass = getColorClasses(stat.color);
+          return (
+            <div key={index} className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`p-3 ${colorClass.bg} rounded-xl group-hover:scale-110 transition-transform`}>
+                  <svg className={`w-6 h-6 ${colorClass.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                  </svg>
+                </div>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  stat.change.startsWith('+') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {stat.change}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Form Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">Create New Demand Letter</h2>
         
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Letter Type</label>
-            <select
-              name="letterType"
-              value={formData.letterType}
-              onChange={handleInputChange}
-              style={styles.select}
-            >
-              <option value="payment">Payment Demand</option>
-              <option value="reminder">Payment Reminder</option>
-              <option value="legal">Legal Notice</option>
-              <option value="final">Final Demand</option>
-              <option value="installment">Installment Demand</option>
-            </select>
+        <div className="space-y-6">
+          {/* Letter Type & Recipient */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Letter Type</label>
+              <select
+                name="letterType"
+                value={formData.letterType}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                  paddingRight: '2.5rem'
+                }}
+              >
+                <option value="payment">Payment Demand</option>
+                <option value="reminder">Payment Reminder</option>
+                <option value="legal">Legal Notice</option>
+                <option value="final">Final Demand</option>
+                <option value="installment">Installment Demand</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Recipient Name</label>
+              <input
+                type="text"
+                name="recipientName"
+                value={formData.recipientName}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter recipient name"
+              />
+            </div>
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Recipient Name</label>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Recipient Email</label>
             <input
-              type="text"
-              name="recipientName"
-              value={formData.recipientName}
+              type="email"
+              name="recipientEmail"
+              value={formData.recipientEmail}
               onChange={handleInputChange}
-              style={styles.input}
-              placeholder="Enter recipient name"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter email for reminders"
             />
           </div>
-        </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Recipient Email</label>
-          <input
-            type="email"
-            name="recipientEmail"
-            value={formData.recipientEmail}
-            onChange={handleInputChange}
-            style={styles.input}
-            placeholder="Enter email for reminders"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Recipient Address</label>
+            <textarea
+              name="recipientAddress"
+              value={formData.recipientAddress}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="Enter full address"
+              rows="2"
+            />
+          </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Recipient Address</label>
-          <textarea
-            name="recipientAddress"
-            value={formData.recipientAddress}
-            onChange={handleInputChange}
-            style={styles.textarea}
-            placeholder="Enter full address"
-            rows="2"
-          />
-        </div>
+          {/* Payment Schedule Section */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Payment Schedule
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Type</label>
+                <div className="flex flex-wrap gap-4">
+                  {[
+                    { value: 'one-time', label: 'One-time Payment' },
+                    { value: 'installments', label: 'Installments' },
+                    { value: 'custom', label: 'Custom Schedule' },
+                  ].map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentSchedule"
+                        value={option.value}
+                        checked={formData.paymentSchedule === option.value}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-        {/* Payment Schedule Section */}
-        <div style={styles.paymentSection}>
-          <h3 style={styles.subSectionTitle}>Payment Schedule</h3>
-          
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Payment Type</label>
-            <div style={styles.radioGroup}>
-              <label style={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="paymentSchedule"
-                  value="one-time"
-                  checked={formData.paymentSchedule === 'one-time'}
-                  onChange={handleInputChange}
-                />
-                One-time Payment
-              </label>
-              <label style={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="paymentSchedule"
-                  value="installments"
-                  checked={formData.paymentSchedule === 'installments'}
-                  onChange={handleInputChange}
-                />
-                Installments
-              </label>
-              <label style={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="paymentSchedule"
-                  value="custom"
-                  checked={formData.paymentSchedule === 'custom'}
-                  onChange={handleInputChange}
-                />
-                Custom Schedule
-              </label>
+              {formData.paymentSchedule === 'installments' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Number of Installments</label>
+                  <select
+                    name="installments"
+                    value={formData.installments}
+                    onChange={handleInputChange}
+                    className="w-full md:w-64 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                      backgroundPosition: 'right 0.5rem center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '1.5em 1.5em',
+                      paddingRight: '2.5rem'
+                    }}
+                  >
+                    <option value="2">2 Installments</option>
+                    <option value="3">3 Installments</option>
+                    <option value="4">4 Installments</option>
+                    <option value="5">5 Installments</option>
+                    <option value="6">6 Installments</option>
+                    <option value="12">12 Installments</option>
+                  </select>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Each installment: <strong className="text-blue-600">{formatCurrency(formData.installmentAmount)}</strong>
+                  </p>
+                </div>
+              )}
+
+              {formData.paymentSchedule === 'custom' && (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((num) => (
+                    <div key={num} className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700 w-28">Installment {num}:</span>
+                      <input
+                        type="date"
+                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {formData.paymentSchedule === 'installments' && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Number of Installments</label>
-              <select
-                name="installments"
-                value={formData.installments}
-                onChange={handleInputChange}
-                style={styles.select}
-              >
-                <option value="2">2 Installments</option>
-                <option value="3">3 Installments</option>
-                <option value="4">4 Installments</option>
-                <option value="5">5 Installments</option>
-                <option value="6">6 Installments</option>
-                <option value="12">12 Installments</option>
-              </select>
-              <p style={styles.helpText}>
-                Each installment: <strong>₹ {parseFloat(formData.installmentAmount).toLocaleString()}</strong>
-              </p>
-            </div>
-          )}
+          {/* Amount Details */}
+          <div className="bg-violet-50 border border-violet-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              Amount Details
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Base Amount (₹)</label>
+                  <input
+                    type="number"
+                    name="baseAmount"
+                    value={formData.baseAmount}
+                    onChange={handleInputChange}
+                    onBlur={calculateTotals}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter base amount"
+                  />
+                </div>
 
-          {formData.paymentSchedule === 'custom' && (
-            <div style={styles.customSchedule}>
-              <div style={styles.scheduleItem}>
-                <span>Installment 1:</span>
-                <input type="date" style={styles.input} />
+                <div className="flex items-end">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="includeGst"
+                      checked={formData.includeGst}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-semibold text-gray-700">Include GST</span>
+                  </label>
+                </div>
               </div>
-              <div style={styles.scheduleItem}>
-                <span>Installment 2:</span>
-                <input type="date" style={styles.input} />
-              </div>
-              <div style={styles.scheduleItem}>
-                <span>Installment 3:</span>
-                <input type="date" style={styles.input} />
+
+              {formData.includeGst && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">GST Rate (%)</label>
+                    <select
+                      name="gstRate"
+                      value={formData.gstRate}
+                      onChange={handleInputChange}
+                      onBlur={calculateTotals}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '2.5rem'
+                      }}
+                    >
+                      <option value="5">5% (GST)</option>
+                      <option value="12">12% (GST)</option>
+                      <option value="18">18% (GST)</option>
+                      <option value="28">28% (GST)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">GST Amount (₹)</label>
+                    <input
+                      type="text"
+                      name="gstAmount"
+                      value={formData.gstAmount}
+                      readOnly
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 font-semibold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Total Summary */}
+              <div className="bg-white border border-violet-300 rounded-xl p-4 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Base Amount:</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(formData.baseAmount)}</span>
+                </div>
+                {formData.includeGst && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">GST ({formData.gstRate}%):</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(formData.gstAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-3 border-t border-violet-200">
+                  <span className="font-bold text-gray-900">Total Amount:</span>
+                  <span className="font-bold text-2xl text-emerald-600">{formatCurrency(formData.totalAmount)}</span>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* GST Calculation Section */}
-        <div style={styles.paymentSection}>
-          <h3 style={styles.subSectionTitle}>Amount Details</h3>
-          
-          <div style={styles.formRow}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Base Amount (₹)</label>
+          {/* Due Date & Subject */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Due Date</label>
               <input
-                type="number"
-                name="baseAmount"
-                value={formData.baseAmount}
+                type="date"
+                name="dueDate"
+                value={formData.dueDate}
                 onChange={handleInputChange}
-                style={styles.input}
-                placeholder="Enter base amount"
-                onBlur={calculateTotals}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  name="includeGst"
-                  checked={formData.includeGst}
-                  onChange={handleInputChange}
-                />
-                Include GST
-              </label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+              <input
+                type="text"
+                name="subject"
+                value={formData.subject}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Letter subject"
+              />
             </div>
           </div>
 
-          {formData.includeGst && (
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>GST Rate (%)</label>
-                <select
-                  name="gstRate"
-                  value={formData.gstRate}
-                  onChange={handleInputChange}
-                  style={styles.select}
-                  onBlur={calculateTotals}
-                >
-                  <option value="5">5% (GST)</option>
-                  <option value="12">12% (GST)</option>
-                  <option value="18">18% (GST)</option>
-                  <option value="28">28% (GST)</option>
-                </select>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>GST Amount (₹)</label>
-                <input
-                  type="text"
-                  name="gstAmount"
-                  value={formData.gstAmount}
-                  readOnly
-                  style={{ ...styles.input, backgroundColor: '#f0f0f0' }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div style={styles.totalSection}>
-            <div style={styles.totalRow}>
-              <span style={styles.totalLabel}>Base Amount:</span>
-              <span style={styles.totalValue}>₹ {parseFloat(formData.baseAmount || 0).toLocaleString()}</span>
-            </div>
-            {formData.includeGst && (
-              <div style={styles.totalRow}>
-                <span style={styles.totalLabel}>GST ({formData.gstRate}%):</span>
-                <span style={styles.totalValue}>₹ {parseFloat(formData.gstAmount || 0).toLocaleString()}</span>
-              </div>
-            )}
-            <div style={{ ...styles.totalRow, ...styles.grandTotal }}>
-              <span style={styles.totalLabel}>Total Amount:</span>
-              <span style={styles.totalValueHighlight}>₹ {parseFloat(formData.totalAmount || 0).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Due Date</label>
-            <input
-              type="date"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleInputChange}
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Subject</label>
-            <input
-              type="text"
-              name="subject"
-              value={formData.subject}
-              onChange={handleInputChange}
-              style={styles.input}
-              placeholder="Letter subject"
-            />
-          </div>
-        </div>
-
-        {/* Email Reminder Section */}
-        <div style={styles.paymentSection}>
-          <h3 style={styles.subSectionTitle}>Email Reminders</h3>
-          
-          <div style={styles.formGroup}>
-            <label style={styles.checkboxLabel}>
+          {/* Email Reminders */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
               <input
                 type="checkbox"
                 name="sendEmailReminder"
                 checked={formData.sendEmailReminder}
                 onChange={handleInputChange}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
               />
-              Send Email Reminders for Due Payment
-            </label>
-          </div>
-
-          {formData.sendEmailReminder && (
-            <div style={styles.reminderOptions}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Reminder Frequency</label>
-                  <select
-                    name="reminderFrequency"
-                    value={formData.reminderFrequency}
-                    onChange={handleInputChange}
-                    style={styles.select}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Remind Before Due Date (Days)</label>
-                  <select
-                    name="reminderBeforeDays"
-                    value={formData.reminderBeforeDays}
-                    onChange={handleInputChange}
-                    style={styles.select}
-                  >
-                    <option value="1">1 Day</option>
-                    <option value="3">3 Days</option>
-                    <option value="5">5 Days</option>
-                    <option value="7">7 Days</option>
-                    <option value="14">14 Days</option>
-                    <option value="30">30 Days</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={styles.reminderPreview}>
-                <h4 style={styles.reminderPreviewTitle}>Reminder Schedule Preview</h4>
-                <div style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>📧</span>
-                  <span>First reminder: {formData.reminderBeforeDays} days before due date</span>
-                </div>
-                <div style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>🔔</span>
-                  <span>Frequency: Every {formData.reminderFrequency === 'bi-weekly' ? '2 weeks' : formData.reminderFrequency}</span>
-                </div>
-                <div style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>⚠️</span>
-                  <span>Final notice: On due date if unpaid</span>
-                </div>
-              </div>
+              <label className="text-lg font-bold text-gray-900 cursor-pointer">
+                Send Email Reminders for Due Payment
+              </label>
             </div>
-          )}
-        </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Message / Additional Details</label>
-          <textarea
-            name="message"
-            value={formData.message}
-            onChange={handleInputChange}
-            style={styles.textarea}
-            placeholder="Enter detailed message or custom terms..."
-            rows="4"
-          />
-        </div>
+            {formData.sendEmailReminder && (
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Reminder Frequency</label>
+                    <select
+                      name="reminderFrequency"
+                      value={formData.reminderFrequency}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '2.5rem'
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="bi-weekly">Bi-Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
 
-        <div style={styles.buttonGroup}>
-          <button style={styles.generateButton}>Generate Letter</button>
-          <button style={styles.previewButton}>Preview</button>
-          <button style={styles.downloadButton}>Download PDF</button>
-          {formData.sendEmailReminder && (
-            <button style={styles.emailButton}>📧 Send with Reminders</button>
-          )}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Remind Before Due Date (Days)</label>
+                    <select
+                      name="reminderBeforeDays"
+                      value={formData.reminderBeforeDays}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '2.5rem'
+                      }}
+                    >
+                      <option value="1">1 Day</option>
+                      <option value="3">3 Days</option>
+                      <option value="5">5 Days</option>
+                      <option value="7">7 Days</option>
+                      <option value="14">14 Days</option>
+                      <option value="30">30 Days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-amber-300 rounded-xl p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Reminder Schedule Preview</h4>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📧</span>
+                      <span>First reminder: {formData.reminderBeforeDays} days before due date</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🔔</span>
+                      <span>Frequency: Every {formData.reminderFrequency === 'bi-weekly' ? '2 weeks' : formData.reminderFrequency}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">⚠️</span>
+                      <span>Final notice: On due date if unpaid</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Message */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Message / Additional Details</label>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="Enter detailed message or custom terms..."
+              rows="4"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-200">
+            <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-sm">
+              Generate Letter
+            </button>
+            <button className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors">
+              Preview
+            </button>
+            <button className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all shadow-sm">
+              Download PDF
+            </button>
+            {formData.sendEmailReminder && (
+              <button className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all shadow-sm flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Send with Reminders
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div style={styles.recentSection}>
-        <h2 style={styles.sectionTitle}>Recent Demand Letters</h2>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Date</th>
-              <th style={styles.th}>Recipient</th>
-              <th style={styles.th}>Type</th>
-              <th style={styles.th}>Amount</th>
-              <th style={styles.th}>Schedule</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={styles.td}>2026-01-30</td>
-              <td style={styles.td}>ABC Properties Ltd.</td>
-              <td style={styles.td}>Payment Demand</td>
-              <td style={styles.td}>
-                <div style={styles.amountBreakup}>
-                  <span>₹5,00,000</span>
-                  <small>+ ₹90,000 GST</small>
-                </div>
-              </td>
-              <td style={styles.td}>One-time</td>
-              <td style={styles.td}><span style={styles.statusSent}>Sent</span></td>
-              <td style={styles.td}>
-                <div style={styles.actionButtons}>
-                  <button style={styles.actionButton}>View</button>
-                  <button style={styles.resendButton}>Resend</button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style={styles.td}>2026-01-28</td>
-              <td style={styles.td}>XYZ Developers</td>
-              <td style={styles.td}>Installment</td>
-              <td style={styles.td}>
-                <div style={styles.amountBreakup}>
-                  <span>₹2,50,000</span>
-                  <small>× 3 inst.</small>
-                </div>
-              </td>
-              <td style={styles.td}>3 Installments</td>
-              <td style={styles.td}><span style={styles.statusPending}>Pending</span></td>
-              <td style={styles.td}>
-                <div style={styles.actionButtons}>
-                  <button style={styles.actionButton}>View</button>
-                  <button style={styles.resendButton}>Send Reminder</button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style={styles.td}>2026-01-25</td>
-              <td style={styles.td}>PQR Infrastructure</td>
-              <td style={styles.td}>Final Demand</td>
-              <td style={styles.td}>₹10,00,000</td>
-              <td style={styles.td}>One-time</td>
-              <td style={styles.td}><span style={styles.statusSent}>Sent</span></td>
-              <td style={styles.td}>
-                <div style={styles.actionButtons}>
-                  <button style={styles.actionButton}>View</button>
-                  <button style={styles.resendButton}>Resend</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      {/* Recent Letters Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Recent Demand Letters</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Recipient</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Schedule</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {[
+                { date: '2026-01-30', recipient: 'ABC Properties Ltd.', type: 'Payment Demand', amount: '5,00,000', gst: '90,000', schedule: 'One-time', status: 'Sent' },
+                { date: '2026-01-28', recipient: 'XYZ Developers', type: 'Installment', amount: '2,50,000', inst: '× 3 inst.', schedule: '3 Installments', status: 'Pending' },
+                { date: '2026-01-25', recipient: 'PQR Infrastructure', type: 'Final Demand', amount: '10,00,000', schedule: 'One-time', status: 'Sent' },
+              ].map((letter, index) => (
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-gray-600">{letter.date}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">{letter.recipient}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{letter.type}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-900">₹{letter.amount}</span>
+                      {letter.gst && <span className="text-xs text-gray-500">+ ₹{letter.gst} GST</span>}
+                      {letter.inst && <span className="text-xs text-gray-500">{letter.inst}</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{letter.schedule}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                      letter.status === 'Sent' 
+                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200' 
+                        : 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                    }`}>
+                      {letter.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        View
+                      </button>
+                      <button className="px-3 py-1.5 text-xs font-semibold text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
+                        {letter.status === 'Pending' ? 'Send Reminder' : 'Resend'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div style={styles.templateSection}>
-        <h2 style={styles.sectionTitle}>Letter Templates</h2>
-        <div style={styles.templateGrid}>
-          <div style={styles.templateCard}>
-            <h3 style={styles.templateTitle}>Payment Demand</h3>
-            <p style={styles.templateDesc}>Standard payment demand letter for overdue amounts with GST.</p>
-            <button style={styles.useTemplateButton}>Use Template</button>
-          </div>
-          <div style={styles.templateCard}>
-            <h3 style={styles.templateTitle}>Installment Agreement</h3>
-            <p style={styles.templateDesc}>For payments with flexible installment schedules.</p>
-            <button style={styles.useTemplateButton}>Use Template</button>
-          </div>
-          <div style={styles.templateCard}>
-            <h3 style={styles.templateTitle}>Payment Reminder</h3>
-            <p style={styles.templateDesc}>Friendly reminder with automated follow-up options.</p>
-            <button style={styles.useTemplateButton}>Use Template</button>
-          </div>
-          <div style={styles.templateCard}>
-            <h3 style={styles.templateTitle}>Final Demand</h3>
-            <p style={styles.templateDesc}>Final demand letter before taking legal action.</p>
-            <button style={styles.useTemplateButton}>Use Template</button>
-          </div>
+      {/* Templates */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Letter Templates</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { title: 'Payment Demand', desc: 'Standard payment demand letter for overdue amounts with GST.', color: 'blue' },
+            { title: 'Installment Agreement', desc: 'For payments with flexible installment schedules.', color: 'emerald' },
+            { title: 'Payment Reminder', desc: 'Friendly reminder with automated follow-up options.', color: 'violet' },
+            { title: 'Final Demand', desc: 'Final demand letter before taking legal action.', color: 'amber' },
+          ].map((template, index) => {
+            const colorClass = getColorClasses(template.color);
+            return (
+              <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all">
+                <h3 className="font-bold text-gray-900 mb-2">{template.title}</h3>
+                <p className="text-sm text-gray-600 mb-4">{template.desc}</p>
+                <button className={`w-full px-4 py-2 bg-gradient-to-r ${colorClass.gradient} text-white font-semibold rounded-lg hover:opacity-90 transition-opacity`}>
+                  Use Template
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'Arial, sans-serif',
-    lineHeight: '1.6',
-    color: '#333',
-  },
-  title: {
-    fontSize: '2.5rem',
-    color: '#2c3e50',
-    marginBottom: '10px',
-    borderBottom: '2px solid #3498db',
-    paddingBottom: '10px',
-  },
-  description: {
-    fontSize: '1.1rem',
-    color: '#7f8c8d',
-    marginBottom: '30px',
-  },
-  formSection: {
-    backgroundColor: '#f8f9fa',
-    padding: '25px',
-    borderRadius: '10px',
-    marginBottom: '30px',
-  },
-  sectionTitle: {
-    fontSize: '1.4rem',
-    color: '#2c3e50',
-    marginBottom: '20px',
-  },
-  subSectionTitle: {
-    fontSize: '1.1rem',
-    color: '#2c3e50',
-    marginBottom: '15px',
-    paddingBottom: '10px',
-    borderBottom: '1px solid #ddd',
-  },
-  formRow: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '15px',
-  },
-  formGroup: {
-    flex: 1,
-    marginBottom: '15px',
-  },
-  label: {
-    display: 'block',
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    color: '#2c3e50',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    cursor: 'pointer',
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-  },
-  select: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    backgroundColor: '#fff',
-  },
-  textarea: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    resize: 'vertical',
-  },
-  radioGroup: {
-    display: 'flex',
-    gap: '20px',
-    flexWrap: 'wrap',
-  },
-  radioLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    cursor: 'pointer',
-  },
-  paymentSection: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '10px',
-    marginBottom: '20px',
-    border: '1px solid #eee',
-  },
-  customSchedule: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  scheduleItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  helpText: {
-    fontSize: '0.9rem',
-    color: '#7f8c8d',
-    marginTop: '5px',
-  },
-  totalSection: {
-    backgroundColor: '#f8f9fa',
-    padding: '15px',
-    borderRadius: '8px',
-    marginTop: '15px',
-  },
-  totalRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '5px 0',
-  },
-  totalLabel: {
-    color: '#7f8c8d',
-  },
-  totalValue: {
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  grandTotal: {
-    borderTop: '2px solid #3498db',
-    paddingTop: '10px',
-    marginTop: '10px',
-  },
-  totalValueHighlight: {
-    fontWeight: 'bold',
-    color: '#27ae60',
-    fontSize: '1.2rem',
-  },
-  reminderOptions: {
-    marginTop: '15px',
-  },
-  reminderPreview: {
-    backgroundColor: '#e8f4fd',
-    padding: '15px',
-    borderRadius: '8px',
-    marginTop: '15px',
-  },
-  reminderPreviewTitle: {
-    fontSize: '1rem',
-    color: '#2c3e50',
-    marginBottom: '10px',
-  },
-  reminderItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '5px 0',
-    color: '#7f8c8d',
-  },
-  reminderIcon: {
-    fontSize: '1.2rem',
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '20px',
-    flexWrap: 'wrap',
-  },
-  generateButton: {
-    padding: '12px 25px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  previewButton: {
-    padding: '12px 25px',
-    backgroundColor: '#95a5a6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  downloadButton: {
-    padding: '12px 25px',
-    backgroundColor: '#27ae60',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  emailButton: {
-    padding: '12px 25px',
-    backgroundColor: '#9b59b6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  recentSection: {
-    marginBottom: '30px',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: '#fff',
-    borderRadius: '10px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-  },
-  th: {
-    backgroundColor: '#3498db',
-    color: '#fff',
-    padding: '15px',
-    textAlign: 'left',
-  },
-  td: {
-    padding: '15px',
-    borderBottom: '1px solid #eee',
-  },
-  amountBreakup: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  statusSent: {
-    backgroundColor: '#27ae60',
-    color: '#fff',
-    padding: '5px 10px',
-    borderRadius: '3px',
-    fontSize: '0.85rem',
-  },
-  statusPending: {
-    backgroundColor: '#f39c12',
-    color: '#fff',
-    padding: '5px 10px',
-    borderRadius: '3px',
-    fontSize: '0.85rem',
-  },
-  actionButtons: {
-    display: 'flex',
-    gap: '5px',
-  },
-  actionButton: {
-    padding: '8px 15px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-  },
-  resendButton: {
-    padding: '8px 15px',
-    backgroundColor: '#9b59b6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-  },
-  templateSection: {
-    marginBottom: '30px',
-  },
-  templateGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-  },
-  templateCard: {
-    backgroundColor: '#f8f9fa',
-    padding: '20px',
-    borderRadius: '10px',
-    border: '1px solid #eee',
-  },
-  templateTitle: {
-    fontSize: '1.2rem',
-    color: '#2c3e50',
-    marginBottom: '10px',
-  },
-  templateDesc: {
-    color: '#7f8c8d',
-    marginBottom: '15px',
-  },
-  useTemplateButton: {
-    padding: '10px 20px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    width: '100%',
-  },
 };
 
 export default DemandLetter;

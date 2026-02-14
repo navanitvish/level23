@@ -1,44 +1,45 @@
-// src/pages/TermsConditions.jsx
+// src/pages/PrivacyPolicy.jsx
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { termsApi } from '../api/endpoints';
+import { policyApi } from '../../api/endpoints';
 
-const TermsConditions = () => {
+const PrivacyPolicy = () => {
   const queryClient = useQueryClient();
   
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('collection');
   const [expandedSection, setExpandedSection] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingTerm, setEditingTerm] = useState(null);
-  const [formData, setFormData] = useState({ title: '', content: '', category: 'general' });
+  const [editingPolicy, setEditingPolicy] = useState(null);
+  const [formData, setFormData] = useState({ title: '', content: '', category: 'collection' });
 
-  // ─── FETCH ALL TERMS ──────────────────────────────────────
+  // ─── FETCH ALL POLICIES ───────────────────────────────────
   const {
-    data: termsData = {},
+    data: policiesData = {},
     isLoading,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ['terms'],
-    queryFn: termsApi.getAll,
+    queryKey: ['policies'],
+    queryFn: policyApi.getAll,
     select: (response) => {
       const data = response?.data || response;
       
-      // Group terms by category
+      // Group policies by category
       const grouped = {
-        general: [],
-        booking: [],
-        cancellation: [],
-        legal: [],
-        property: [],
+        collection: [],
+        usage: [],
+        sharing: [],
+        security: [],
+        rights: [],
+        cookies: [],
       };
 
       if (Array.isArray(data)) {
-        data.forEach(term => {
-          const category = term.category || 'general';
+        data.forEach(policy => {
+          const category = policy.category || 'collection';
           if (grouped[category]) {
-            grouped[category].push(term);
+            grouped[category].push(policy);
           }
         });
       }
@@ -48,62 +49,62 @@ const TermsConditions = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // ─── CREATE TERM ──────────────────────────────────────────
+  // ─── CREATE POLICY ────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: termsApi.create,
+    mutationFn: policyApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
       closeModal();
     },
     onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to create term');
+      alert(err.response?.data?.message || 'Failed to create policy');
     },
   });
 
-  // ─── UPDATE TERM ──────────────────────────────────────────
+  // ─── UPDATE POLICY ────────────────────────────────────────
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => termsApi.update(id, data),
+    mutationFn: ({ id, data }) => policyApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
       closeModal();
     },
     onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to update term');
+      alert(err.response?.data?.message || 'Failed to update policy');
     },
   });
 
-  // ─── DELETE TERM ──────────────────────────────────────────
+  // ─── DELETE POLICY ────────────────────────────────────────
   const deleteMutation = useMutation({
-    mutationFn: termsApi.remove,
+    mutationFn: policyApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
     },
     onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to delete term');
+      alert(err.response?.data?.message || 'Failed to delete policy');
     },
   });
 
   // ─── HANDLERS ─────────────────────────────────────────────
   const openAddModal = () => {
-    setEditingTerm(null);
+    setEditingPolicy(null);
     setFormData({ title: '', content: '', category: activeTab });
     setShowModal(true);
   };
 
-  const openEditModal = (term) => {
-    setEditingTerm(term);
+  const openEditModal = (policy) => {
+    setEditingPolicy(policy);
     setFormData({
-      title: term.title,
-      content: term.content,
-      category: term.category || activeTab,
+      title: policy.title,
+      content: policy.content,
+      category: policy.category || activeTab,
     });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setEditingTerm(null);
-    setFormData({ title: '', content: '', category: 'general' });
+    setEditingPolicy(null);
+    setFormData({ title: '', content: '', category: 'collection' });
   };
 
   const handleSubmit = (e) => {
@@ -114,9 +115,9 @@ const TermsConditions = () => {
       return;
     }
 
-    if (editingTerm) {
+    if (editingPolicy) {
       updateMutation.mutate({
-        id: editingTerm._id || editingTerm.id,
+        id: editingPolicy._id || editingPolicy.id,
         data: formData,
       });
     } else {
@@ -125,32 +126,33 @@ const TermsConditions = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this term?')) {
+    if (window.confirm('Are you sure you want to delete this policy?')) {
       deleteMutation.mutate(id);
     }
   };
 
   const tabInfo = {
-    general: { icon: '📋', label: 'General Terms', color: '#3b82f6' },
-    booking: { icon: '🏠', label: 'Booking Terms', color: '#10b981' },
-    cancellation: { icon: '↩️', label: 'Cancellation', color: '#ef4444' },
-    legal: { icon: '⚖️', label: 'Legal Terms', color: '#8b5cf6' },
-    property: { icon: '🏗️', label: 'Property Terms', color: '#f59e0b' },
+    collection: { icon: '📊', label: 'Data Collection', color: '#3b82f6' },
+    usage: { icon: '🔍', label: 'Data Usage', color: '#10b981' },
+    sharing: { icon: '🤝', label: 'Data Sharing', color: '#f59e0b' },
+    security: { icon: '🔒', label: 'Security', color: '#ef4444' },
+    rights: { icon: '⚖️', label: 'User Rights', color: '#8b5cf6' },
+    cookies: { icon: '🍪', label: 'Cookies', color: '#ec4899' },
   };
 
   const actionLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
-  const currentTerms = termsData[activeTab] || [];
+  const currentPolicies = policiesData[activeTab] || [];
 
   return (
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerContent}>
-          <h1 style={styles.title}>⚖️ Terms & Conditions</h1>
-          <p style={styles.subtitle}>Manage legal terms and policies</p>
+          <h1 style={styles.title}>🔒 Privacy Policy</h1>
+          <p style={styles.subtitle}>Manage privacy policies and data protection</p>
         </div>
         <button onClick={openAddModal} style={styles.addButton} disabled={actionLoading}>
-          ✚ Add New Term
+          ✚ Add Policy
         </button>
       </div>
 
@@ -168,7 +170,7 @@ const TermsConditions = () => {
             <span style={styles.tabIcon}>{info.icon}</span>
             <span style={styles.tabLabel}>{info.label}</span>
             <span style={styles.tabCount}>
-              {termsData[key]?.length || 0}
+              {policiesData[key]?.length || 0}
             </span>
           </button>
         ))}
@@ -180,7 +182,7 @@ const TermsConditions = () => {
         {isLoading && (
           <div style={styles.centerMessage}>
             <div style={styles.spinner}>⏳</div>
-            <p>Loading terms...</p>
+            <p>Loading policies...</p>
           </div>
         )}
 
@@ -188,7 +190,7 @@ const TermsConditions = () => {
         {isError && (
           <div style={styles.errorBox}>
             <p style={styles.errorText}>
-              ❌ {error?.response?.data?.message || error?.message || 'Failed to load terms'}
+              ❌ {error?.response?.data?.message || error?.message || 'Failed to load policies'}
             </p>
             <button onClick={() => refetch()} style={styles.retryButton}>
               🔄 Retry
@@ -196,35 +198,35 @@ const TermsConditions = () => {
           </div>
         )}
 
-        {/* Terms List */}
+        {/* Policies List */}
         {!isLoading && !isError && (
           <>
-            {currentTerms.length === 0 ? (
+            {currentPolicies.length === 0 ? (
               <div style={styles.emptyState}>
                 <div style={styles.emptyIcon}>{tabInfo[activeTab].icon}</div>
-                <h3 style={styles.emptyTitle}>No terms yet</h3>
-                <p style={styles.emptyText}>Add your first term in this category</p>
+                <h3 style={styles.emptyTitle}>No policies yet</h3>
+                <p style={styles.emptyText}>Add your first policy in this category</p>
                 <button onClick={openAddModal} style={styles.emptyButton}>
-                  ✚ Add Term
+                  ✚ Add Policy
                 </button>
               </div>
             ) : (
-              <div style={styles.termsList}>
-                {currentTerms.map((term, index) => (
-                  <div key={term._id || term.id || index} style={styles.termCard}>
+              <div style={styles.policyList}>
+                {currentPolicies.map((policy, index) => (
+                  <div key={policy._id || policy.id || index} style={styles.policyCard}>
                     <div
-                      style={styles.termHeader}
+                      style={styles.policyHeader}
                       onClick={() => setExpandedSection(
-                        expandedSection === (term._id || term.id) ? null : (term._id || term.id)
+                        expandedSection === (policy._id || policy.id) ? null : (policy._id || policy.id)
                       )}
                     >
-                      <div style={styles.termHeaderLeft}>
-                        <span style={styles.termIndex}>{index + 1}</span>
-                        <h3 style={styles.termTitle}>{term.title}</h3>
+                      <div style={styles.policyHeaderLeft}>
+                        <span style={styles.policyIndex}>{index + 1}</span>
+                        <h3 style={styles.policyTitle}>{policy.title}</h3>
                       </div>
-                      <div style={styles.termHeaderRight}>
+                      <div style={styles.policyHeaderRight}>
                         <button
-                          onClick={(e) => { e.stopPropagation(); openEditModal(term); }}
+                          onClick={(e) => { e.stopPropagation(); openEditModal(policy); }}
                           style={styles.iconButton}
                           disabled={actionLoading}
                           title="Edit"
@@ -232,7 +234,7 @@ const TermsConditions = () => {
                           ✏️
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(term._id || term.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(policy._id || policy.id); }}
                           style={styles.iconButton}
                           disabled={actionLoading}
                           title="Delete"
@@ -240,13 +242,13 @@ const TermsConditions = () => {
                           🗑️
                         </button>
                         <span style={styles.expandIcon}>
-                          {expandedSection === (term._id || term.id) ? '▲' : '▼'}
+                          {expandedSection === (policy._id || policy.id) ? '▲' : '▼'}
                         </span>
                       </div>
                     </div>
-                    {expandedSection === (term._id || term.id) && (
-                      <div style={styles.termContent}>
-                        <p style={styles.termText}>{term.content}</p>
+                    {expandedSection === (policy._id || policy.id) && (
+                      <div style={styles.policyContent}>
+                        <p style={styles.policyText}>{policy.content}</p>
                       </div>
                     )}
                   </div>
@@ -263,7 +265,7 @@ const TermsConditions = () => {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
-                {editingTerm ? '✏️ Edit Term' : '✚ Add New Term'}
+                {editingPolicy ? '✏️ Edit Policy' : '✚ Add New Policy'}
               </h2>
               <button onClick={closeModal} style={styles.closeButton}>✕</button>
             </div>
@@ -289,7 +291,7 @@ const TermsConditions = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   style={styles.input}
-                  placeholder="Enter term title..."
+                  placeholder="Enter policy title..."
                   required
                 />
               </div>
@@ -299,7 +301,7 @@ const TermsConditions = () => {
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   style={styles.textarea}
-                  placeholder="Enter term content..."
+                  placeholder="Enter policy content..."
                   rows={8}
                   required
                 />
@@ -309,7 +311,7 @@ const TermsConditions = () => {
                   Cancel
                 </button>
                 <button type="submit" style={styles.saveBtn} disabled={actionLoading}>
-                  {actionLoading ? '⏳ Saving...' : editingTerm ? '💾 Update' : '✅ Create'}
+                  {actionLoading ? '⏳ Saving...' : editingPolicy ? '💾 Update' : '✅ Create'}
                 </button>
               </div>
             </form>
@@ -371,25 +373,25 @@ const styles = {
     transition: 'all 0.2s',
   },
   tabsContainer: {
-    display: 'flex',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
     gap: '8px',
     marginBottom: '24px',
-    overflowX: 'auto',
-    paddingBottom: '8px',
   },
   tab: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '8px',
-    padding: '12px 20px',
+    padding: '12px 16px',
     backgroundColor: '#fff',
     border: '2px solid #e5e7eb',
     borderRadius: '8px',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    whiteSpace: 'nowrap',
     fontSize: '14px',
     color: '#6b7280',
+    flexWrap: 'wrap',
   },
   tabActive: {
     color: '#fff',
@@ -400,7 +402,7 @@ const styles = {
     fontSize: '18px',
   },
   tabLabel: {
-    fontSize: '14px',
+    fontSize: '13px',
   },
   tabCount: {
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -474,18 +476,18 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
   },
-  termsList: {
+  policyList: {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
   },
-  termCard: {
+  policyCard: {
     border: '1px solid #e5e7eb',
     borderRadius: '8px',
     overflow: 'hidden',
     transition: 'all 0.2s',
   },
-  termHeader: {
+  policyHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -494,25 +496,25 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.2s',
   },
-  termHeaderLeft: {
+  policyHeaderLeft: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     flex: 1,
   },
-  termIndex: {
+  policyIndex: {
     fontSize: '14px',
     fontWeight: '700',
     color: '#3b82f6',
     minWidth: '24px',
   },
-  termTitle: {
+  policyTitle: {
     fontSize: '16px',
     fontWeight: '600',
     color: '#111827',
     margin: 0,
   },
-  termHeaderRight: {
+  policyHeaderRight: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
@@ -531,12 +533,12 @@ const styles = {
     color: '#6b7280',
     marginLeft: '8px',
   },
-  termContent: {
+  policyContent: {
     padding: '20px',
     borderTop: '1px solid #e5e7eb',
     backgroundColor: '#fff',
   },
-  termText: {
+  policyText: {
     fontSize: '14px',
     lineHeight: '1.7',
     color: '#374151',
@@ -679,4 +681,4 @@ const styles = {
   },
 };
 
-export default TermsConditions;
+export default PrivacyPolicy;
