@@ -1,11 +1,11 @@
 // src/components/Layout.jsx
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
 const Layout = ({ children }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
