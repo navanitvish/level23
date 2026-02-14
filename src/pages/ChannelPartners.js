@@ -186,6 +186,16 @@ const ChannelPartners = () => {
     });
   };
 
+  const downloadQRCode = () => {
+    if (qrPartner) {
+      const qrImage = generateQRCode(qrLink);
+      const link = document.createElement('a');
+      link.download = `QR-${qrPartner.company}.png`;
+      link.href = qrImage;
+      link.click();
+    }
+  };
+
   const stats = [
     { label: 'Total Partners', value: '156', change: '+12', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', color: 'blue' },
     { label: 'Active Partners', value: '45', change: '+5', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'emerald' },
@@ -454,11 +464,10 @@ const ChannelPartners = () => {
         </div>
       </div>
 
-      {/* Add Partner Modal - Simplified for brevity */}
+      {/* Add Partner Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
           <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Modal implementation continues... */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Add New Partner</h2>
@@ -503,7 +512,6 @@ const ChannelPartners = () => {
                 </div>
               </div>
 
-              {/* Form fields continue... truncated for brevity */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Partner Name *</label>
@@ -513,6 +521,54 @@ const ChannelPartners = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Company Name *</label>
                   <input type="text" name="company" value={formData.company} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Type *</label>
+                  <select name="type" value={formData.type} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    <option value="broker">Broker</option>
+                    <option value="agent">Agent</option>
+                    <option value="builder">Builder</option>
+                    <option value="consultant">Consultant</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Commission % *</label>
+                  <input type="number" name="commission" value={formData.commission} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="5" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Phone *</label>
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
+                <textarea name="notes" value={formData.notes} onChange={handleInputChange} rows="3" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t">
@@ -528,7 +584,206 @@ const ChannelPartners = () => {
         </div>
       )}
 
-      {/* Other modals continue similarly... */}
+      {/* Marketing Creative Modal */}
+      {showMarketingModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowMarketingModal(false)}>
+          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Send Marketing Creative</h2>
+                  <p className="text-violet-100 text-sm mt-1">Share promotional materials with partners</p>
+                </div>
+                <button onClick={() => setShowMarketingModal(false)} className="text-white hover:bg-white/20 p-2 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Upload Section */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Creatives</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-violet-500 transition-colors cursor-pointer relative">
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.pdf"
+                    multiple
+                    onChange={handleCreativeChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-lg font-semibold text-gray-700">Drop files here or click to upload</p>
+                  <p className="text-sm text-gray-500 mt-1">Images, videos, PDFs up to 10MB each</p>
+                </div>
+              </div>
+
+              {/* Preview Section */}
+              {creativePreview.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Selected Files ({creativePreview.length})</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {creativePreview.map((item, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50">
+                          <img src={item.preview} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCreative(index)}
+                          className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <p className="text-xs text-gray-600 mt-1 truncate">{item.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Section */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Message (Optional)</label>
+                <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  rows="4"
+                  placeholder="Add a message to your partners..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                ></textarea>
+              </div>
+
+              {/* Select Partners */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Select Recipients</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-4">
+                  {partners.map((partner, index) => (
+                    <label key={index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                        {partner.avatar}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900">{partner.name}</p>
+                        <p className="text-xs text-gray-500">{partner.company}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sending Status */}
+              {sendingStatus === 'sending' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                  <p className="text-blue-700 font-semibold">Sending creatives...</p>
+                </div>
+              )}
+
+              {sendingStatus === 'success' && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-emerald-700 font-semibold">Creatives sent successfully!</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowMarketingModal(false)}
+                  className="px-6 py-2.5 text-gray-700 font-semibold border border-gray-300 rounded-xl hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendCreatives}
+                  disabled={creativePreview.length === 0 || sendingStatus === 'sending'}
+                  className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendingStatus === 'sending' ? 'Sending...' : 'Send to Partners'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && qrPartner && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQRModal(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Partner QR Code</h2>
+                  <p className="text-violet-100 text-sm mt-1">{qrPartner.company}</p>
+                </div>
+                <button onClick={() => setShowQRModal(false)} className="text-white hover:bg-white/20 p-2 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* QR Code Display */}
+              <div className="bg-white p-6 rounded-xl border-2 border-gray-200 flex justify-center">
+                <img src={generateQRCode(qrLink)} alt="QR Code" className="w-64 h-64" />
+              </div>
+
+              {/* Partner Info */}
+              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                    {qrPartner.avatar}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">{qrPartner.name}</p>
+                    <p className="text-sm text-gray-600">{qrPartner.company}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-2">Registration Link:</p>
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <p className="text-xs text-gray-700 break-all font-mono">{qrLink}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => copyToClipboard(qrLink)}
+                  className="flex-1 px-4 py-2.5 bg-white border-2 border-violet-600 text-violet-600 font-semibold rounded-xl hover:bg-violet-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Link
+                </button>
+                <button
+                  onClick={downloadQRCode}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
