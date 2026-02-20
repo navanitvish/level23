@@ -108,3 +108,25 @@ export const propertyApi = {
   update:  (id, data) => axiosInstance.put(`/properties/update/${id}`, data),
   remove:  (id)       => axiosInstance.delete(`/properties/delete/${id}`),
 };
+
+
+// ─── Add these to your existing src/api/endpoints.js ───────────
+
+export const wingApi = {
+  getAll:        ()         => axiosInstance.get("/wings"),
+  getByProject:  (projectId)=> axiosInstance.get(`/wings?projectId=${projectId}`),
+  getById:       (id)       => axiosInstance.get(`/wings/${id}`),
+  create:        (data)     => axiosInstance.post("/wings/create", data),
+  update:        (id, data) => axiosInstance.put(`/wings/${id}`, data),
+  remove:        (id)       => axiosInstance.delete(`/wings/${id}`),
+};
+
+export const unitApi = {
+  getAll:        ()         => axiosInstance.get("/units"),
+  getByWing:     (wingId)   => axiosInstance.get(`/units?wingId=${wingId}`),
+  getByProject:  (projectId)=> axiosInstance.get(`/units?projectId=${projectId}`),
+  getById:       (id)       => axiosInstance.get(`/units/${id}`),
+  create:        (data)     => axiosInstance.post("/units/create", data),
+  update:        (id, data) => axiosInstance.put(`/units/${id}`, data),
+  remove:        (id)       => axiosInstance.delete(`/units/${id}`),
+};
