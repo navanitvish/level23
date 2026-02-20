@@ -3,10 +3,10 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "https://level-23.onrender.com/level-23", // 🔁 change to your API URL
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
+  // headers: {
+  //   "Content-Type": "application/json",
+  //   Accept: "application/json",
+  // },
 });
 
 // ─── REQUEST INTERCEPTOR ───────────────────────────────────

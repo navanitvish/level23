@@ -75,4 +75,36 @@ export const inventoryApi = {
   create:  (data)     => axiosInstance.post("/inventory/create", data),
   update:  (id, data) => axiosInstance.put(`/inventory/${id}`, data),
   remove:  (id)       => axiosInstance.delete(`/inventory/${id}`),
-}
+};
+
+
+// ─── BOOKINGS ─────────────────────────────────────────────
+export const bookingApi = {
+  getAll:             ()         => axiosInstance.get("/bookings/getAll"),
+  getById:            (id)       => axiosInstance.get(`/bookings/${id}`),
+  create:             (data)     => axiosInstance.post("/bookings/create", data),
+  updatePersonal:     (id, data) => axiosInstance.put(`/bookings/updatePersonal/${id}`, data),
+  updateKyc:          (id, data) => axiosInstance.put(`/bookings/updateKyc/${id}`, data),
+  updateProperty:     (id, data) => axiosInstance.put(`/bookings/updateProperty/${id}`, data),
+  updatePayment:      (id, data) => axiosInstance.put(`/bookings/updatePayment/${id}`, data),
+  submit:             (id)       => axiosInstance.put(`/bookings/submit/${id}`),
+  remove:             (id)       => axiosInstance.delete(`/bookings/${id}`),
+};
+
+// ─── DEMAND LETTERS ───────────────────────────────────────
+export const demandLetterApi = {
+  getAll:      ()         => axiosInstance.get("/demand-letters"),
+  getById:     (id)       => axiosInstance.get(`/demand-letters/${id}`),
+  create:      (data)     => axiosInstance.post("/demand-letters/create", data),
+  update:      (id, data) => axiosInstance.put(`/demand-letters/${id}`, data),
+  remove:      (id)       => axiosInstance.delete(`/demand-letters/${id}`),
+  generate:    (id)       => axiosInstance.get(`/demand-letters/${id}/generate`, { responseType: 'blob' }),
+};
+
+export const propertyApi = {
+  getAll:  ()         => axiosInstance.get("/properties/getAll"),
+  getById: (id)       => axiosInstance.get(`/properties/${id}`),
+  create:  (data)     => axiosInstance.post("/properties/create", data),
+  update:  (id, data) => axiosInstance.put(`/properties/update/${id}`, data),
+  remove:  (id)       => axiosInstance.delete(`/properties/delete/${id}`),
+};

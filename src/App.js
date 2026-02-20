@@ -18,6 +18,10 @@ import Calculator from './pages/Calculator';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 import ManageCategories from './pages/categories/ManageCategories';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import ManageProperties from './pages/ManageProperties';
+import ManageFAQ from './pages/ManageFAQ';
+import ProjectManagement from './pages/ProjectManagement';
 
 function App() {
   const { user, loading } = useAuth();
@@ -41,15 +45,23 @@ function App() {
         }  
       />
       <Route path="/inventory" element={user ? <Layout><Inventory /></Layout> : <Navigate to="/login" />} />
+      {/* project */}
+      <Route path="/projects" element={user ? <Layout><ProjectManagement /></Layout> : <Navigate to="/login" />} />  
+      {/* add Property */}
+      <Route path="/manage-properties" element={user ? <Layout><ManageProperties /></Layout> : <Navigate to="/login" />} />
       <Route path="/manage-categories" element={user ? <Layout><ManageCategories /></Layout> : <Navigate to="/login" />} />
       <Route path="/cost-sheets" element={user ? <Layout><CostSheets /></Layout> : <Navigate to="/login" />} />
       <Route path="/booking-forms" element={user ? <Layout><BookingForms /></Layout> : <Navigate to="/login" />} />
       <Route path="/rera-details" element={user ? <Layout><ReraDetails /></Layout> : <Navigate to="/login" />} />
       <Route path="/terms-conditions" element={user ? <Layout><TermsConditions /></Layout> : <Navigate to="/login" />} />
+      {/* prvicy-policy */}
+        <Route path="/privacy-policy" element={user ? <Layout><PrivacyPolicy /></Layout> : <Navigate to="/login" />} /> 
       <Route path="/data-analysis" element={user ? <Layout><Analytics /></Layout> : <Navigate to="/login" />} />
       <Route path="/calculator" element={user ? <Layout><Calculator /></Layout> : <Navigate to="/login" />} />
       <Route path="/demand-letters" element={user ? <Layout><DemandLetter /></Layout> : <Navigate to="/login" />} />
       <Route path="/channel-partners" element={user ? <Layout><ChannelPartners /></Layout> : <Navigate to="/login" />} />
+      {/* faq */}
+      <Route path="/faq" element={user ? <Layout><ManageFAQ/></Layout> : <Navigate to="/login" />} />
       <Route path="/marketing" element={user ? <Layout><div>Marketing Page</div></Layout> : <Navigate to="/login" />} />
       <Route path="/receipts" element={user ? <Layout><div>Receipts Page</div></Layout> : <Navigate to="/login" />} />
       <Route path="/recovery" element={user ? <Layout><div>Recovery Page</div></Layout> : <Navigate to="/login" />} />

@@ -1,7 +1,7 @@
 // src/pages/PrivacyPolicy.jsx
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { policyApi } from '../../api/endpoints';
+import { policyApi } from '../api/endpoints';
 
 const PrivacyPolicy = () => {
   const queryClient = useQueryClient();

@@ -45,14 +45,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Actions */}
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="hidden lg:inline">Add Property</span>
-            </button>
-
+           
             {/* Notifications */}
             <button className="relative p-2 rounded-xl text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 group">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
