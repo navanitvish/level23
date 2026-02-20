@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Building2, Plus, Edit, Trash2,
   Layers, Home, CheckCircle, Clock, Ban,
-  Loader2, AlertCircle, Search, X, Eye,
-  TrendingUp, Users, IndianRupee,
+  Loader2, AlertCircle, Search
 } from 'lucide-react'
 import WingModal from './WingModal'
 import UnitModal from './UnitModal'
