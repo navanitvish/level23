@@ -130,3 +130,14 @@ export const unitApi = {
   update:        (id, data) => axiosInstance.put(`/units/${id}`, data),
   remove:        (id)       => axiosInstance.delete(`/units/${id}`),
 };
+
+
+// ─── CHANNEL PARTNERS ─────────────────────────────────────
+export const channelPartnerApi = {
+  getAll:      ()         => axiosInstance.get("/channel-partners"),
+  getById:     (id)       => axiosInstance.get(`/channel-partners/${id}`),
+  create:      (data)     => axiosInstance.post("/channel-partners/create", data),
+  update:      (id, data) => axiosInstance.put(`/channel-partners/${id}`, data),
+  remove:      (id)       => axiosInstance.delete(`/channel-partners/${id}`),
+  sendCreative: (data)    => axiosInstance.post("/channel-partners/send-creative", data),
+};

@@ -5,21 +5,21 @@ import { X, Layers, Loader2 } from 'lucide-react'
 const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
   const isEditing = Boolean(wing)
 
-  const empty = {
+  const getEmptyForm = () => ({
     name:        '',
     totalFloors: '',
     description: '',
     isActive:    true,
-  }
+  })
 
-  const [form, setForm] = useState(empty)
+  const [form, setForm] = useState(getEmptyForm)
 
   useEffect(() => {
     setForm(wing
       ? { name: wing.name || '', totalFloors: wing.totalFloors || '', description: wing.description || '', isActive: wing.isActive ?? true }
-      : empty
+      : getEmptyForm()
     )
-  }, [])
+  }, [wing])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target

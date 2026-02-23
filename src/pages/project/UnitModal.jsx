@@ -14,7 +14,7 @@ const STATUS_STYLE = {
 const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }) => {
   const isEditing = Boolean(unit)
 
-  const empty = {
+  const getEmptyForm = () => ({
     unitNo:       '',
     unitType:     '2BHK',
     floor:        '',
@@ -26,9 +26,9 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
     soldBy:       '',
     price:        '',
     isActive:     true,
-  }
+  })
 
-  const [form, setForm] = useState(empty)
+  const [form, setForm] = useState(getEmptyForm)
 
   useEffect(() => {
     setForm(unit
@@ -45,9 +45,9 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
           price:        unit.price        ?? '',
           isActive:     unit.isActive     ?? true,
         }
-      : empty
+      : getEmptyForm()
     )
-  }, [])
+  }, [unit])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
