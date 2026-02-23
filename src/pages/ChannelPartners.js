@@ -13,7 +13,7 @@ const ChannelPartners = () => {
   const [generatedCreatives, setGeneratedCreatives] = useState([]);
   
   const canvasRef = useRef(null);
-  const baseImageRef = useRef(null);
+  // const baseImageRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,7 +42,7 @@ const ChannelPartners = () => {
   const {
     data: partners = [],
     isLoading,
-    refetch,
+    // refetch,
   } = useQuery({
     queryKey: ['channel-partners'],
     queryFn: channelPartnerApi.getAll,
@@ -277,6 +277,7 @@ const ChannelPartners = () => {
   };
 
   const handleGenerateForSelected = () => {
+    // eslint-disable-next-line array-callback-return
     const creatives = selectedPartners.map(partnerId => {
       const partner = partners.find(p => (p._id || p.id) === partnerId);
       if (!partner) return null;
