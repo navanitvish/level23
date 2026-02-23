@@ -70,8 +70,8 @@ const DemandLetter = () => {
   // ─── FETCH DEMAND LETTERS ─────────────────────────────────
   const {
     data: demandLetters = [],
-    isLoading,
-    refetch,
+    // isLoading,
+    // refetch,
   } = useQuery({
     queryKey: ['demand-letters'],
     queryFn: demandLetterApi.getAll,
@@ -164,7 +164,7 @@ const DemandLetter = () => {
   };
 
   const calculateDues = () => {
-    const total = parseFloat(formData.totalConsideration) || 0;
+    // const total = parseFloat(formData.totalConsideration) || 0;
     const checkedMilestones = formData.milestones.filter(m => m.checked);
     const dueAmount = checkedMilestones.reduce((sum, m) => sum + m.amount, 0);
     const amountReceived = parseFloat(formData.amountReceived) || 0;

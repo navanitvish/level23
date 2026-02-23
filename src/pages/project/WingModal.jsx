@@ -19,7 +19,7 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
       ? { name: wing.name || '', totalFloors: wing.totalFloors || '', description: wing.description || '', isActive: wing.isActive ?? true }
       : empty
     )
-  }, [wing, isOpen])
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target

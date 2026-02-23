@@ -47,7 +47,7 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
         }
       : empty
     )
-  }, [unit, isOpen])
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target

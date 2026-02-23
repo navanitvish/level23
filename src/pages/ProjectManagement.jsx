@@ -3,7 +3,7 @@ import { useState } from 'react'
 import {
   Building2, Plus, Edit, Trash2, Search, X,
   Download, CheckCircle, XCircle, MapPin,
-  Home, Layers, TrendingUp, Eye, ChevronRight,
+  Home, Layers, TrendingUp, Eye,
 } from 'lucide-react'
 import ProjectWingsUnits from './project/ProjectWingsUnits'
 
