@@ -7,7 +7,7 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
 
   const getEmptyForm = () => ({
     name:        '',
-    totalFloors: '',
+    number:      '',   // e.g. "A", "B", "1"
     description: '',
     isActive:    true,
   })
@@ -16,10 +16,15 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
 
   useEffect(() => {
     setForm(wing
-      ? { name: wing.name || '', totalFloors: wing.totalFloors || '', description: wing.description || '', isActive: wing.isActive ?? true }
+      ? {
+          name:        wing.name        || '',
+          number:      wing.number      || '',
+          description: wing.description || '',
+          isActive:    wing.isActive    ?? true,
+        }
       : getEmptyForm()
     )
-  }, [wing])
+  }, [wing, isOpen])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -29,10 +34,13 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!form.name.trim()) return alert('Wing name is required')
+    // ── API body: { projectId, name, number, description } ──
     onSave({
-      ...form,
       projectId,
-      totalFloors: Number(form.totalFloors) || 0,
+      name:        form.name.trim(),
+      number:      form.number.trim(),
+      description: form.description.trim(),
+      isActive:    form.isActive,
     })
   }
 
@@ -41,6 +49,7 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -55,36 +64,37 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Wing Name */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Wing / Tower Name <span className="text-red-500">*</span>
-            </label>
-            <input type="text" name="name" value={form.name} onChange={handleChange}
-              required placeholder="e.g. Wing A  or  Tower 1"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
 
-          {/* Total Floors */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Total Floors
-            </label>
-            <input type="number" name="totalFloors" value={form.totalFloors} onChange={handleChange}
-              min="0" placeholder="e.g. 10"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {/* Name + Number side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Wing / Tower Name <span className="text-red-500">*</span>
+              </label>
+              <input type="text" name="name" value={form.name} onChange={handleChange}
+                required placeholder="e.g. Tower A"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Wing Number
+              </label>
+              <input type="text" name="number" value={form.number} onChange={handleChange}
+                placeholder="e.g. A"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-400 mt-1">Short identifier: A, B, 1, 2...</p>
+            </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Description
-            </label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Description</label>
             <textarea name="description" value={form.description} onChange={handleChange}
               rows={2} placeholder="Optional notes about this wing..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
@@ -96,7 +106,7 @@ const WingModal = ({ isOpen, onClose, onSave, wing, projectId, loading }) => {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600" />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600" />
             </label>
           </div>
 

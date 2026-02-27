@@ -2,29 +2,33 @@
 import { useState, useEffect } from 'react'
 import { X, Home, Loader2 } from 'lucide-react'
 
-const UNIT_TYPES   = ['1BHK', '2BHK', '3BHK', '4BHK', 'Studio', 'Penthouse', 'Shop', 'Office']
-const UNIT_STATUSES = ['Available', 'Sold', 'Hold']
+const UNIT_TYPES = ['1bhk', '2bhk', '3bhk', '4bhk', 'studio', 'penthouse', 'shop', 'office']
+const UNIT_TYPE_LABELS = {
+  '1bhk': '1 BHK', '2bhk': '2 BHK', '3bhk': '3 BHK', '4bhk': '4 BHK',
+  'studio': 'Studio', 'penthouse': 'Penthouse', 'shop': 'Shop', 'office': 'Office',
+}
+const UNIT_STATUSES = ['available', 'sold', 'hold']
 
 const STATUS_STYLE = {
-  Available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Sold:      'bg-red-50 text-red-700 border-red-200',
-  Hold:      'bg-amber-50 text-amber-700 border-amber-200',
+  available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  sold:      'bg-red-50 text-red-700 border-red-200',
+  hold:      'bg-amber-50 text-amber-700 border-amber-200',
 }
+const STATUS_LABEL = { available: 'Available', sold: 'Sold', hold: 'Hold' }
 
-const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }) => {
+const UnitModal = ({ isOpen, onClose, onSave, unit, floorId, wingId, projectId, loading }) => {
   const isEditing = Boolean(unit)
 
   const getEmptyForm = () => ({
-    unitNo:       '',
-    unitType:     '2BHK',
-    floor:        '',
+    name:         '',    // e.g. "Unit 101"
+    number:       '',    // e.g. "101"
+    unitType:     '2bhk',
     carpetArea:   '',
-    scalableArea: '',
+    saleableArea: '',
     facing:       '',
-    status:       'Available',
+    status:       'available',
     heldBy:       '',
     soldBy:       '',
-    price:        '',
     isActive:     true,
   })
 
@@ -33,21 +37,20 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
   useEffect(() => {
     setForm(unit
       ? {
-          unitNo:       unit.unitNo       || '',
-          unitType:     unit.unitType     || '2BHK',
-          floor:        unit.floor        ?? '',
+          name:         unit.name         || '',
+          number:       unit.number       || '',
+          unitType:     unit.unitType     || '2bhk',
           carpetArea:   unit.carpetArea   ?? '',
-          scalableArea: unit.scalableArea ?? '',
+          saleableArea: unit.saleableArea ?? '',
           facing:       unit.facing       || '',
-          status:       unit.status       || 'Available',
+          status:       unit.status       || 'available',
           heldBy:       unit.heldBy       || '',
           soldBy:       unit.soldBy       || '',
-          price:        unit.price        ?? '',
           isActive:     unit.isActive     ?? true,
         }
       : getEmptyForm()
     )
-  }, [unit])
+  }, [unit, isOpen])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -56,18 +59,24 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.unitNo.trim()) return alert('Unit number is required')
+    if (!form.name.trim()) return alert('Unit name is required')
+    if (!floorId)          return alert('Floor not selected')
+
+    // ── API body matching Postman ──
     onSave({
-      ...form,
-      wingId,
+      floorId,
       projectId,
-      floor:        Number(form.floor),
-      carpetArea:   Number(form.carpetArea),
-      scalableArea: Number(form.scalableArea),
-      price:        Number(form.price),
-      // Clear irrelevant fields based on status
-      heldBy: form.status === 'Hold' ? form.heldBy : '',
-      soldBy: form.status === 'Sold' ? form.soldBy : '',
+      name:         form.name.trim(),
+      number:       form.number.trim() || form.name.trim(),
+      carpetArea:   form.carpetArea,
+      saleableArea: form.saleableArea,
+      unitType:     form.unitType,
+      facing:       form.facing,
+      status:       form.status,
+      // Conditional
+      // heldBy: form.status === 'hold' ? form.heldBy : '',
+      // soldBy: form.status === 'sold' ? form.soldBy : '',
+      // isActive: form.isActive,
     })
   }
 
@@ -76,6 +85,7 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-6 py-5 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
@@ -91,117 +101,103 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
 
-          {/* Section: Unit Info */}
+          {/* ── Unit Info ── */}
           <div className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2">
             Unit Information
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Unit No */}
+            {/* Unit Name */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Unit No <span className="text-red-500">*</span>
+                Unit Name <span className="text-red-500">*</span>
               </label>
-              <input type="text" name="unitNo" value={form.unitNo} onChange={handleChange}
-                required placeholder="e.g. A-101"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <input type="text" name="name" value={form.name} onChange={handleChange}
+                required placeholder="e.g. Unit 101"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
+            {/* Unit Number */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Unit Number
+              </label>
+              <input type="text" name="number" value={form.number} onChange={handleChange}
+                placeholder="e.g. 101"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             {/* Unit Type */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
                 Unit Type <span className="text-red-500">*</span>
               </label>
               <select name="unitType" value={form.unitType} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                {UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {UNIT_TYPES.map(t => (
+                  <option key={t} value={t}>{UNIT_TYPE_LABELS[t]}</option>
+                ))}
               </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Floor */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Floor</label>
-              <input type="number" name="floor" value={form.floor} onChange={handleChange}
-                min="0" placeholder="e.g. 5"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
             </div>
 
             {/* Facing */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Facing</label>
               <select name="facing" value={form.facing} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select Facing</option>
-                {['North', 'South', 'East', 'West', 'North-East', 'North-West', 'South-East', 'South-West'].map(f => (
-                  <option key={f}>{f}</option>
+                {['north', 'south', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'].map(f => (
+                  <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Section: Area */}
-          <div className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 pt-2">
+          {/* ── Area ── */}
+          <div className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 pt-1">
             Area Details
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Carpet Area */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
                 Carpet Area (sq ft)
               </label>
               <input type="number" name="carpetArea" value={form.carpetArea} onChange={handleChange}
-                min="0" placeholder="e.g. 650"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                min="0" placeholder="e.g. 1200"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* Scalable / Built-up Area */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-                Scalable Area (sq ft)
+                Saleable Area (sq ft)
               </label>
-              <input type="number" name="scalableArea" value={form.scalableArea} onChange={handleChange}
-                min="0" placeholder="e.g. 750"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <input type="number" name="saleableArea" value={form.saleableArea} onChange={handleChange}
+                min="0" placeholder="e.g. 1500"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          {/* Area Preview */}
-          {form.carpetArea && form.scalableArea && (
+          {/* Efficiency preview */}
+          {form.carpetArea && form.saleableArea && Number(form.saleableArea) > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
               <span className="text-sm text-blue-700 font-medium">Efficiency Ratio</span>
               <span className="text-sm font-bold text-blue-800">
-                {Math.round((Number(form.carpetArea) / Number(form.scalableArea)) * 100)}% carpet
+                {Math.round((Number(form.carpetArea) / Number(form.saleableArea)) * 100)}% carpet
               </span>
             </div>
           )}
 
-          {/* Price */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Price (₹)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">₹</span>
-              <input type="number" name="price" value={form.price} onChange={handleChange}
-                min="0" placeholder="e.g. 4500000"
-                className="w-full border border-gray-200 rounded-lg pl-7 pr-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Section: Status */}
-          <div className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 pt-2">
+          {/* ── Status ── */}
+          <div className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-blue-100 pb-2 pt-1">
             Status
           </div>
 
-          {/* Status Radio Buttons */}
           <div className="grid grid-cols-3 gap-3">
             {UNIT_STATUSES.map(s => (
               <label key={s} className={`cursor-pointer flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
@@ -211,35 +207,35 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
               }`}>
                 <input type="radio" name="status" value={s} checked={form.status === s} onChange={handleChange} className="sr-only" />
                 <span className={`w-2 h-2 rounded-full ${
-                  s === 'Available' ? 'bg-emerald-500' : s === 'Sold' ? 'bg-red-500' : 'bg-amber-500'
+                  s === 'available' ? 'bg-emerald-500' : s === 'sold' ? 'bg-red-500' : 'bg-amber-500'
                 }`} />
-                {s}
+                {STATUS_LABEL[s]}
               </label>
             ))}
           </div>
 
-          {/* Conditional: Hold By */}
-          {form.status === 'Hold' && (
+          {/* Hold By */}
+          {form.status === 'hold' && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
                 Held By (Customer Name)
               </label>
               <input type="text" name="heldBy" value={form.heldBy} onChange={handleChange}
                 placeholder="e.g. Ramesh Sharma"
-                className="w-full border border-amber-200 rounded-lg px-3 py-2.5 text-sm bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="w-full border border-amber-200 rounded-lg px-3 py-2.5 text-sm bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
           )}
 
-          {/* Conditional: Sold By */}
-          {form.status === 'Sold' && (
+          {/* Sold By */}
+          {form.status === 'sold' && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
                 Sold By (Agent / Sales Person)
               </label>
               <input type="text" name="soldBy" value={form.soldBy} onChange={handleChange}
                 placeholder="e.g. Priya Mehta"
-                className="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+                className="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>
           )}
@@ -252,7 +248,7 @@ const UnitModal = ({ isOpen, onClose, onSave, unit, wingId, projectId, loading }
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600" />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-600" />
             </label>
           </div>
 

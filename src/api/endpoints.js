@@ -13,11 +13,12 @@ export const postApi = {
 
 // ─── USERS ────────────────────────────────────────────────
 export const userApi = {
-  getAll:   ()        => axiosInstance.get("/users"),
+  getAlls:   ()        => axiosInstance.get("/users"),
   getById:  (id)      => axiosInstance.get(`/users/${id}`),
   create:   (data)    => axiosInstance.post("/users", data),
   update:   (id, data)=> axiosInstance.put(`/users/${id}`, data),
   remove:   (id)      => axiosInstance.delete(`/users/${id}`),
+  getAll: (role) => axiosInstance.get(`/users/getAll${role ? `?role=${role}` : ''}`),
 };
 
 // ─── COMMENTS ─────────────────────────────────────────────
@@ -45,6 +46,17 @@ export const categoryApi = {
   remove:   (id)           => axiosInstance.delete(`/categories/delete/${id}`),
 };
 
+// ─── SUBCATEGORIES ────────────────────────────────────────
+export const subCategoryApi = {
+  getAll:   ()               => axiosInstance.get('/subCategories/getAll'),  // ← ADD THIS
+  create:   (categoryId, data) => axiosInstance.post(`/subCategories/${categoryId}/create`, data, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }),
+  update:   (id, data)       => axiosInstance.put(`/subCategories/${id}`, data, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }),
+  remove:   (id)             => axiosInstance.delete(`/subCategories/${id}`),
+}
 // Terms & Conditions
 export const termsApi = {
   getAll:  ()         => axiosInstance.get("/terms-and-conditions/getAll"),
@@ -93,14 +105,12 @@ export const bookingApi = {
 
 // ─── DEMAND LETTERS ───────────────────────────────────────
 export const demandLetterApi = {
-  getAll:      ()         => axiosInstance.get("/demand-letters"),
-  getById:     (id)       => axiosInstance.get(`/demand-letters/${id}`),
-  create:      (data)     => axiosInstance.post("/demand-letters/create", data),
-  update:      (id, data) => axiosInstance.put(`/demand-letters/${id}`, data),
-  remove:      (id)       => axiosInstance.delete(`/demand-letters/${id}`),
-  generate:    (id)       => axiosInstance.get(`/demand-letters/${id}/generate`, { responseType: 'blob' }),
+  getAll:   () => axiosInstance.get("/demandLetters/getAll"),
+  getById:  (id) => axiosInstance.get(`/demandLetters/get/${id}`),
+  create:   (data) => axiosInstance.post("/demandLetters/create", data),
+  update:   (id, data) => axiosInstance.put(`/demandLetters/update/${id}`, data),
+  remove:   (id) => axiosInstance.delete(`/demandLetters/delete/${id}`),
 };
-
 export const propertyApi = {
   getAll:  ()         => axiosInstance.get("/properties/getAll"),
   getById: (id)       => axiosInstance.get(`/properties/${id}`),
@@ -110,34 +120,83 @@ export const propertyApi = {
 };
 
 
-// ─── Add these to your existing src/api/endpoints.js ───────────
+// ─── Add/replace these in src/api/endpoints.js ─────────────────
 
+// ─── WINGS / TOWERS ───────────────────────────────────────────
 export const wingApi = {
-  getAll:        ()         => axiosInstance.get("/wings"),
-  getByProject:  (projectId)=> axiosInstance.get(`/wings?projectId=${projectId}`),
-  getById:       (id)       => axiosInstance.get(`/wings/${id}`),
-  create:        (data)     => axiosInstance.post("/wings/create", data),
-  update:        (id, data) => axiosInstance.put(`/wings/${id}`, data),
-  remove:        (id)       => axiosInstance.delete(`/wings/${id}`),
-};
+  getAll:       ()           => axiosInstance.get('/towers/getAll'),
+  getByProject: (projectId)  => axiosInstance.get(`/towers/getAll?projectId=${projectId}`),
+  getById:      (id)         => axiosInstance.get(`/towers/${id}`),
+  create:       (data)       => axiosInstance.post('/towers/create', data),
+  // Body: { projectId, name, number, description }
+  update:       (id, data)   => axiosInstance.put(`/towers/${id}`, data),
+  remove:       (id)         => axiosInstance.delete(`/towers/${id}`),
+}
 
+// ─── FLOORS ───────────────────────────────────────────────────
+export const floorApi = {
+  getAll:     ()             => axiosInstance.get('/floors/getAll'),
+  getByWing:  (towerId)      => axiosInstance.get(`/floors/getAll?towerId=${towerId}`),  // ✅ towerId (not wingId)
+  getById:    (id)           => axiosInstance.get(`/floors/${id}`),
+  create:     (data)         => axiosInstance.post('/floors/create', data),
+  // Body: { towerId, projectId, name, number(as Number) }   ← wingId NOT allowed
+  update:     (id, data)     => axiosInstance.put(`/floors/${id}`, data),
+  remove:     (id)           => axiosInstance.delete(`/floors/${id}`),
+}
+
+// ─── UNITS ────────────────────────────────────────────────────
 export const unitApi = {
-  getAll:        ()         => axiosInstance.get("/units"),
-  getByWing:     (wingId)   => axiosInstance.get(`/units?wingId=${wingId}`),
-  getByProject:  (projectId)=> axiosInstance.get(`/units?projectId=${projectId}`),
-  getById:       (id)       => axiosInstance.get(`/units/${id}`),
-  create:        (data)     => axiosInstance.post("/units/create", data),
-  update:        (id, data) => axiosInstance.put(`/units/${id}`, data),
-  remove:        (id)       => axiosInstance.delete(`/units/${id}`),
-};
+  getAll:       ()           => axiosInstance.get('/units/getAll'),
+  getByFloor:   (floorId)    => axiosInstance.get(`/units/getAll?floorId=${floorId}`),
+  getByWing:    (wingId)     => axiosInstance.get(`/units/getAll?wingId=${wingId}`),
+  getByProject: (projectId)  => axiosInstance.get(`/units/getAll?projectId=${projectId}`),
+  getById:      (id)         => axiosInstance.get(`/units/${id}`),
+  create:       (data)       => axiosInstance.post('/units/create', data),
+  // Body: { floorId, name, number, carpetArea, saleableArea, unitType, facing, status }
+  update:       (id, data)   => axiosInstance.put(`/units/update/${id}`, data),
+  remove:       (id)         => axiosInstance.delete(`/units/delete/${id}`),
+
+}
 
 
 // ─── CHANNEL PARTNERS ─────────────────────────────────────
 export const channelPartnerApi = {
-  getAll:      ()         => axiosInstance.get("/channel-partners"),
+  getAll:      ()         => axiosInstance.get("/partners/getAll"),
   getById:     (id)       => axiosInstance.get(`/channel-partners/${id}`),
-  create:      (data)     => axiosInstance.post("/channel-partners/create", data),
+  create:      (data)     => axiosInstance.post("/auth/register", data),
   update:      (id, data) => axiosInstance.put(`/channel-partners/${id}`, data),
   remove:      (id)       => axiosInstance.delete(`/channel-partners/${id}`),
   sendCreative: (data)    => axiosInstance.post("/channel-partners/send-creative", data),
 };
+
+
+// ─── PROJECTS ─────────────────────────────────────────────
+export const projectApi = {
+  getAll:   ()         => axiosInstance.get("/projects/getAll"),
+  getById:  (id)       => axiosInstance.get(`/projects/${id}`),
+  create:   (data)     => axiosInstance.post("/projects/create", data),
+  update:   (id, data) => axiosInstance.put(`/projects/${id}`, data),
+  remove:   (id)       => axiosInstance.delete(`/projects/${id}`),
+};
+
+// ─── API (add these to your endpoints.js) ─────────────────
+export const reraApi = {
+  getByProject: (projectId) => axiosInstance.get(`/reras/getAll?projectId=${projectId}`),
+  getById:      (id)        => axiosInstance.get(`/rera/${id}`),
+  create:       (data)      => axiosInstance.post('/reras/create', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update:       (id, data)  => axiosInstance.put(`/rera/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  delete:       (id)        => axiosInstance.delete(`/rera/${id}`),
+}
+
+
+export const costSheetApi = {
+  create: (data) => axiosInstance.post('/costSheets/create', data),
+  getAll: ()     => axiosInstance.get('/costSheets/getAll'),
+}
+
+
+export const adminSettingsApi = {
+  get:    ()     => axiosInstance.get('/adminSettings/get'),
+  create: (data) => axiosInstance.post('/adminSettings/create', data),
+  update: (data) => axiosInstance.put('/adminSettings/update', data),
+}
