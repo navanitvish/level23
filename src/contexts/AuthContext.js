@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     refreshUser,
     isAdmin: user?.role === 'admin',
-    isSales: user?.role === 'sales',
+    sAdmin: user?.role === 'user',
     isEmailVerified: user?.isEmailVerified ?? false,
     isOnBoardingCompleted: user?.isOnBoardingCompleted ?? false,
   };

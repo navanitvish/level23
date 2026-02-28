@@ -1,682 +1,437 @@
 // src/pages/TermsConditions.jsx
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { termsApi } from '../api/endpoints';
+import React, { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Scale, Plus, Pencil, Trash2, ChevronDown, ChevronUp,
+  X, Loader2, Tag, FileText, AlertCircle, RefreshCw, CheckCircle
+} from 'lucide-react'
+import { termsApi, categoryApi } from '../api/endpoints'
 
-const TermsConditions = () => {
-  const queryClient = useQueryClient();
-  
-  const [activeTab, setActiveTab] = useState('general');
-  const [expandedSection, setExpandedSection] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTerm, setEditingTerm] = useState(null);
-  const [formData, setFormData] = useState({ title: '', content: '', category: 'general' });
+// ─── HELPERS ──────────────────────────────────────────────────
+const toArr = (res) => {
+  if (Array.isArray(res))             return res
+  if (Array.isArray(res?.data))       return res.data
+  if (Array.isArray(res?.data?.data)) return res.data.data
+  return []
+}
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+const inputCls  = "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-gray-300"
+const taCls     = `${inputCls} resize-none`
 
-  // ─── FETCH ALL TERMS ──────────────────────────────────────
-  const {
-    data: termsData = {},
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['terms'],
-    queryFn: termsApi.getAll,
-    select: (response) => {
-      const data = response?.data || response;
-      
-      // Group terms by category
-      const grouped = {
-        general: [],
-        booking: [],
-        cancellation: [],
-        legal: [],
-        property: [],
-      };
+// ─── CONFIRM DELETE ────────────────────────────────────────────
+const ConfirmDelete = ({ open, onClose, onConfirm, loading, name }) => {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Trash2 className="w-6 h-6 text-red-500" />
+        </div>
+        <h3 className="font-bold text-gray-900 mb-1">Delete Term?</h3>
+        <p className="text-sm text-gray-400 mb-6 line-clamp-2">{name}</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600">Cancel</button>
+          <button onClick={onConfirm} disabled={loading}
+            className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+            {loading && <Loader2 size={14} className="animate-spin" />} Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-      if (Array.isArray(data)) {
-        data.forEach(term => {
-          const category = term.category || 'general';
-          if (grouped[category]) {
-            grouped[category].push(term);
-          }
-        });
-      }
+// ─── ADD / EDIT MODAL ──────────────────────────────────────────
+const TermModal = ({ open, onClose, onSave, term, loading, categories }) => {
+  const isEdit = Boolean(term)
+  const [form, setForm] = useState({
+    title:      term?.title       || '',
+    description: term?.description || term?.content || '',
+    categoryId: term?.categoryId  || term?.category?._id || '',
+    isActive:   term?.isActive    ?? true,
+  })
 
-      return grouped;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // ─── CREATE TERM ──────────────────────────────────────────
-  const createMutation = useMutation({
-    mutationFn: termsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
-      closeModal();
-    },
-    onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to create term');
-    },
-  });
-
-  // ─── UPDATE TERM ──────────────────────────────────────────
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => termsApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
-      closeModal();
-    },
-    onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to update term');
-    },
-  });
-
-  // ─── DELETE TERM ──────────────────────────────────────────
-  const deleteMutation = useMutation({
-    mutationFn: termsApi.remove,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['terms'] });
-    },
-    onError: (err) => {
-      alert(err.response?.data?.message || 'Failed to delete term');
-    },
-  });
-
-  // ─── HANDLERS ─────────────────────────────────────────────
-  const openAddModal = () => {
-    setEditingTerm(null);
-    setFormData({ title: '', content: '', category: activeTab });
-    setShowModal(true);
-  };
-
-  const openEditModal = (term) => {
-    setEditingTerm(term);
-    setFormData({
-      title: term.title,
-      content: term.content,
-      category: term.category || activeTab,
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingTerm(null);
-    setFormData({ title: '', content: '', category: 'general' });
-  };
+  // sync when term prop changes
+  const [lastId, setLastId] = useState(term?._id)
+  if (term?._id !== lastId) {
+    setLastId(term?._id)
+    setForm({
+      title:       term?.title       || '',
+      description: term?.description || term?.content || '',
+      categoryId:  term?.categoryId  || term?.category?._id || '',
+      isActive:    term?.isActive    ?? true,
+    })
+  }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.title || !formData.content) {
-      alert('Title and content are required');
-      return;
-    }
+    e.preventDefault()
+    if (!form.title.trim())       return alert('Title is required')
+    if (!form.description.trim()) return alert('Description is required')
+    if (!form.categoryId)         return alert('Please select a category')
+    onSave(form, term?._id || term?.id)
+  }
 
-    if (editingTerm) {
-      updateMutation.mutate({
-        id: editingTerm._id || editingTerm.id,
-        data: formData,
-      });
-    } else {
-      createMutation.mutate(formData);
-    }
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this term?')) {
-      deleteMutation.mutate(id);
-    }
-  };
-
-  const tabInfo = {
-    general: { icon: '📋', label: 'General Terms', color: '#3b82f6' },
-    booking: { icon: '🏠', label: 'Booking Terms', color: '#10b981' },
-    cancellation: { icon: '↩️', label: 'Cancellation', color: '#ef4444' },
-    legal: { icon: '⚖️', label: 'Legal Terms', color: '#8b5cf6' },
-    property: { icon: '🏗️', label: 'Property Terms', color: '#f59e0b' },
-  };
-
-  const actionLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
-  const currentTerms = termsData[activeTab] || [];
+  if (!open) return null
 
   return (
-    <div style={styles.page}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.title}>⚖️ Terms & Conditions</h1>
-          <p style={styles.subtitle}>Manage legal terms and policies</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-t-2xl px-6 py-5 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
+              <Scale size={17} className="text-white" />
+            </div>
+            <h2 className="text-white font-bold text-lg">{isEdit ? 'Edit Term' : 'Add New Term'}</h2>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
         </div>
-        <button onClick={openAddModal} style={styles.addButton} disabled={actionLoading}>
-          ✚ Add New Term
-        </button>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+          {/* Category dropdown — from API */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Category <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={form.categoryId}
+                onChange={e => setForm(p => ({ ...p, categoryId: e.target.value }))}
+                required
+                className={`${inputCls} appearance-none`}>
+                <option value="">— Select Category —</option>
+                {categories.map(c => (
+                  <option key={c._id||c.id} value={c._id||c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Title <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+              required
+              className={inputCls}
+              placeholder="e.g. Product Purchase Terms" />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Description <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              required
+              rows={6}
+              className={taCls}
+              placeholder="Enter terms description..." />
+          </div>
+
+          {/* isActive toggle */}
+          <div className="flex items-center justify-between py-2.5 border-t border-gray-100">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Active Status</p>
+              <p className="text-xs text-gray-400">Term will be visible to users</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={form.isActive}
+                onChange={e => setForm(p => ({ ...p, isActive: e.target.checked }))}
+                className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-cyan-500" />
+            </label>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+              {loading && <Loader2 size={14} className="animate-spin" />}
+              {isEdit ? 'Update Term' : 'Create Term'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ─── ACCORDION TERM ROW ────────────────────────────────────────
+const TermRow = ({ term, index, onEdit, onDelete }) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={`border rounded-2xl overflow-hidden transition-all ${open ? 'border-blue-200 shadow-sm' : 'border-gray-200'}`}>
+      {/* Row header */}
+      <div
+        className={`flex items-center justify-between px-5 py-4 cursor-pointer transition-colors ${open ? 'bg-blue-50/50' : 'bg-gray-50/50 hover:bg-gray-100/50'}`}
+        onClick={() => setOpen(p => !p)}>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black flex-shrink-0">
+            {index + 1}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-900 truncate">{term.title}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              {(term.category?.name || term.categoryName) && (
+                <span className="text-xs text-cyan-600 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <Tag size={9} /> {term.category?.name || term.categoryName}
+                </span>
+              )}
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${term.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                {term.isActive ? '● Active' : '● Inactive'}
+              </span>
+              {term.createdAt && (
+                <span className="text-xs text-gray-400">{fmtDate(term.createdAt)}</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0 ml-3">
+          <button onClick={e => { e.stopPropagation(); onEdit(term) }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+            <Pencil size={13} />
+          </button>
+          <button onClick={e => { e.stopPropagation(); onDelete(term._id||term.id, term.title) }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+            <Trash2 size={13} />
+          </button>
+          <div className={`w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>
+            <ChevronDown size={15} />
+          </div>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div style={styles.tabsContainer}>
-        {Object.entries(tabInfo).map(([key, info]) => (
+      {/* Expanded content */}
+      {open && (
+        <div className="px-5 py-4 border-t border-blue-100 bg-white">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{term.description || term.content}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+const TermsConditions = () => {
+  const qc = useQueryClient()
+
+  const [activeCatId, setActiveCatId] = useState('all')
+  const [termModal, setTermModal]     = useState({ open: false, term: null })
+  const [delModal, setDelModal]       = useState({ open: false, id: null, name: '' })
+
+  // ── QUERIES ──
+  const { data: categories = [], isLoading: cLoad } = useQuery({
+    queryKey: ['term-categories'],
+    queryFn:  async () => toArr(await categoryApi.getAll()),
+  })
+
+  const { data: terms = [], isLoading: tLoad, isError, error, refetch } = useQuery({
+    queryKey: ['terms'],
+    queryFn:  async () => toArr(await termsApi.getAll()),
+  })
+
+  // ── MUTATIONS ──
+  const createTerm = useMutation({
+    mutationFn: (data) => termsApi.create(data),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['terms'] }); setTermModal({ open: false, term: null }) },
+    onError:    (e) => alert(e?.response?.data?.message || 'Failed to create'),
+  })
+
+  const updateTerm = useMutation({
+    mutationFn: ({ id, data }) => termsApi.update(id, data),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['terms'] }); setTermModal({ open: false, term: null }) },
+    onError:    (e) => alert(e?.response?.data?.message || 'Failed to update'),
+  })
+
+  const deleteTerm = useMutation({
+    mutationFn: (id) => termsApi.remove(id),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['terms'] }); setDelModal({ open: false }) },
+    onError:    (e) => alert(e?.response?.data?.message || 'Failed to delete'),
+  })
+
+  const handleSave = (formData, id) => {
+    // POST payload: { title, description, categoryId, isActive }
+    const payload = {
+      title:       formData.title,
+      description: formData.description,
+      categoryId:  formData.categoryId,
+      isActive:    formData.isActive,
+    }
+    if (id) updateTerm.mutate({ id, data: payload })
+    else    createTerm.mutate(payload)
+  }
+
+  const isLoading  = tLoad || cLoad
+  const mutLoading = createTerm.isPending || updateTerm.isPending || deleteTerm.isPending
+
+  // ── FILTER by category ──
+  const filtered = activeCatId === 'all'
+    ? terms
+    : terms.filter(t => (t.categoryId || t.category?._id || t.category?.id) === activeCatId)
+
+  // ── STATS ──
+  const stats = {
+    total:  terms.length,
+    active: terms.filter(t => t.isActive !== false).length,
+    cats:   categories.length,
+  }
+
+  return (
+    <div className="space-y-5">
+
+      {/* ─── HEADER ─────────────────────────── */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-2xl p-7 text-white">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
+              <Scale className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Terms & Conditions</h1>
+              <p className="text-slate-400 text-sm mt-0.5">Manage legal terms and policies for your customers</p>
+            </div>
+          </div>
           <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            style={{
-              ...styles.tab,
-              ...(activeTab === key ? { ...styles.tabActive, backgroundColor: info.color } : {}),
-            }}
-          >
-            <span style={styles.tabIcon}>{info.icon}</span>
-            <span style={styles.tabLabel}>{info.label}</span>
-            <span style={styles.tabCount}>
-              {termsData[key]?.length || 0}
-            </span>
+            onClick={() => setTermModal({ open: true, term: null })}
+            className="flex items-center gap-2 bg-white text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:bg-slate-100 text-sm shadow-lg self-start lg:self-auto">
+            <Plus size={16} /> Add New Term
           </button>
+        </div>
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* ─── STATS ──────────────────────────── */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Terms',   val: stats.total,  gradient: 'from-blue-600 to-cyan-500',     Icon: FileText     },
+          { label: 'Active Terms',  val: stats.active, gradient: 'from-emerald-500 to-green-400', Icon: CheckCircle  },
+          { label: 'Categories',    val: stats.cats,   gradient: 'from-violet-600 to-purple-500', Icon: Tag          },
+        ].map(({ label, val, gradient, Icon }) => (
+          <div key={label} className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+              <Icon size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium">{label}</p>
+              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : val}</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Content */}
-      <div style={styles.content}>
-        {/* Loading */}
-        {isLoading && (
-          <div style={styles.centerMessage}>
-            <div style={styles.spinner}>⏳</div>
-            <p>Loading terms...</p>
-          </div>
-        )}
-
-        {/* Error */}
-        {isError && (
-          <div style={styles.errorBox}>
-            <p style={styles.errorText}>
-              ❌ {error?.response?.data?.message || error?.message || 'Failed to load terms'}
-            </p>
-            <button onClick={() => refetch()} style={styles.retryButton}>
-              🔄 Retry
+      {/* ─── CATEGORY TABS ──────────────────── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setActiveCatId('all')}
+          className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${activeCatId === 'all' ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white border-transparent shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-slate-400'}`}>
+          All Terms
+          <span className="ml-1.5 opacity-70">({terms.length})</span>
+        </button>
+        {categories.map(c => {
+          const count = terms.filter(t => (t.categoryId || t.category?._id) === (c._id||c.id)).length
+          return (
+            <button key={c._id||c.id} onClick={() => setActiveCatId(c._id||c.id)}
+              className={`px-4 py-2 rounded-full text-xs font-bold border transition-all flex items-center gap-1.5 ${activeCatId === (c._id||c.id) ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white border-transparent shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}>
+              <Tag size={10} /> {c.name}
+              <span className="opacity-70">({count})</span>
             </button>
-          </div>
-        )}
-
-        {/* Terms List */}
-        {!isLoading && !isError && (
-          <>
-            {currentTerms.length === 0 ? (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>{tabInfo[activeTab].icon}</div>
-                <h3 style={styles.emptyTitle}>No terms yet</h3>
-                <p style={styles.emptyText}>Add your first term in this category</p>
-                <button onClick={openAddModal} style={styles.emptyButton}>
-                  ✚ Add Term
-                </button>
-              </div>
-            ) : (
-              <div style={styles.termsList}>
-                {currentTerms.map((term, index) => (
-                  <div key={term._id || term.id || index} style={styles.termCard}>
-                    <div
-                      style={styles.termHeader}
-                      onClick={() => setExpandedSection(
-                        expandedSection === (term._id || term.id) ? null : (term._id || term.id)
-                      )}
-                    >
-                      <div style={styles.termHeaderLeft}>
-                        <span style={styles.termIndex}>{index + 1}</span>
-                        <h3 style={styles.termTitle}>{term.title}</h3>
-                      </div>
-                      <div style={styles.termHeaderRight}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openEditModal(term); }}
-                          style={styles.iconButton}
-                          disabled={actionLoading}
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(term._id || term.id); }}
-                          style={styles.iconButton}
-                          disabled={actionLoading}
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                        <span style={styles.expandIcon}>
-                          {expandedSection === (term._id || term.id) ? '▲' : '▼'}
-                        </span>
-                      </div>
-                    </div>
-                    {expandedSection === (term._id || term.id) && (
-                      <div style={styles.termContent}>
-                        <p style={styles.termText}>{term.content}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          )
+        })}
+        {cLoad && <Loader2 size={14} className="animate-spin text-gray-400 ml-1" />}
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                {editingTerm ? '✏️ Edit Term' : '✚ Add New Term'}
-              </h2>
-              <button onClick={closeModal} style={styles.closeButton}>✕</button>
-            </div>
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  style={styles.select}
-                >
-                  {Object.entries(tabInfo).map(([key, info]) => (
-                    <option key={key} value={key}>
-                      {info.icon} {info.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  style={styles.input}
-                  placeholder="Enter term title..."
-                  required
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Content *</label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  style={styles.textarea}
-                  placeholder="Enter term content..."
-                  rows={8}
-                  required
-                />
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={closeModal} style={styles.cancelBtn}>
-                  Cancel
-                </button>
-                <button type="submit" style={styles.saveBtn} disabled={actionLoading}>
-                  {actionLoading ? '⏳ Saving...' : editingTerm ? '💾 Update' : '✅ Create'}
-                </button>
-              </div>
-            </form>
+      {/* ─── TERMS LIST ─────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900">
+              {activeCatId === 'all' ? 'All Terms' : categories.find(c=>(c._id||c.id)===activeCatId)?.name || 'Terms'}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">{filtered.length} term{filtered.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
-      )}
 
-      {/* Loading Overlay */}
-      {actionLoading && (
-        <div style={styles.loadingOverlay}>
-          <div style={styles.loadingBox}>
-            <div style={styles.spinner}>⏳</div>
-            <span>Processing...</span>
+        <div className="p-5">
+          {isLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>
+          ) : isError ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+              <p className="text-red-500 font-semibold mb-4">{error?.response?.data?.message || 'Failed to load terms'}</p>
+              <button onClick={() => refetch()}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600">
+                <RefreshCw size={14} /> Retry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <Scale className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-400 font-semibold mb-1">No terms found</p>
+              <p className="text-gray-300 text-sm mb-5">
+                {activeCatId !== 'all' ? 'No terms in this category.' : 'Get started by adding your first term.'}
+              </p>
+              <button onClick={() => setTermModal({ open: true, term: null })}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+                <Plus size={14} /> Add Term
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((term, idx) => (
+                <TermRow
+                  key={term._id||term.id||idx}
+                  term={term}
+                  index={idx}
+                  onEdit={(t)         => setTermModal({ open: true, term: t })}
+                  onDelete={(id, name) => setDelModal({ open: true, id, name })} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <TermModal
+        open={termModal.open}
+        onClose={() => setTermModal({ open: false, term: null })}
+        onSave={handleSave}
+        term={termModal.term}
+        loading={createTerm.isPending || updateTerm.isPending}
+        categories={categories} />
+
+      <ConfirmDelete
+        open={delModal.open}
+        onClose={() => setDelModal({ open: false })}
+        onConfirm={() => deleteTerm.mutate(delModal.id)}
+        loading={deleteTerm.isPending}
+        name={delModal.name} />
+
+      {/* GLOBAL LOADING */}
+      {mutLoading && (
+        <div className="fixed inset-0 bg-black/25 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-5 shadow-2xl flex items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+            <span className="font-semibold text-gray-900 text-sm">Processing...</span>
           </div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#f3f4f6',
-    padding: '24px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-    flexWrap: 'wrap',
-    gap: '16px',
-  },
-  headerContent: {
-    flex: 1,
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: '700',
-    color: '#111827',
-    margin: '0 0 8px 0',
-  },
-  subtitle: {
-    fontSize: '16px',
-    color: '#6b7280',
-    margin: 0,
-  },
-  addButton: {
-    padding: '12px 24px',
-    backgroundColor: '#3b82f6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  tabsContainer: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '24px',
-    overflowX: 'auto',
-    paddingBottom: '8px',
-  },
-  tab: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    backgroundColor: '#fff',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    whiteSpace: 'nowrap',
-    fontSize: '14px',
-    color: '#6b7280',
-  },
-  tabActive: {
-    color: '#fff',
-    border: 'none',
-    fontWeight: '600',
-  },
-  tabIcon: {
-    fontSize: '18px',
-  },
-  tabLabel: {
-    fontSize: '14px',
-  },
-  tabCount: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: '2px 8px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: '600',
-  },
-  content: {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    padding: '24px',
-    minHeight: '400px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  centerMessage: {
-    textAlign: 'center',
-    padding: '60px 20px',
-    color: '#6b7280',
-  },
-  spinner: {
-    fontSize: '48px',
-    marginBottom: '16px',
-  },
-  errorBox: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    backgroundColor: '#fef2f2',
-    borderRadius: '8px',
-  },
-  errorText: {
-    color: '#dc2626',
-    marginBottom: '16px',
-    fontSize: '16px',
-  },
-  retryButton: {
-    padding: '10px 20px',
-    backgroundColor: '#ef4444',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px 20px',
-  },
-  emptyIcon: {
-    fontSize: '64px',
-    marginBottom: '16px',
-  },
-  emptyTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '8px',
-  },
-  emptyText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    marginBottom: '24px',
-  },
-  emptyButton: {
-    padding: '12px 24px',
-    backgroundColor: '#3b82f6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  termsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  termCard: {
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    transition: 'all 0.2s',
-  },
-  termHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '16px 20px',
-    backgroundColor: '#f9fafb',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  termHeaderLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flex: 1,
-  },
-  termIndex: {
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#3b82f6',
-    minWidth: '24px',
-  },
-  termTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: 0,
-  },
-  termHeaderRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  iconButton: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '18px',
-    padding: '4px 8px',
-    opacity: 0.7,
-    transition: 'opacity 0.2s',
-  },
-  expandIcon: {
-    fontSize: '12px',
-    color: '#6b7280',
-    marginLeft: '8px',
-  },
-  termContent: {
-    padding: '20px',
-    borderTop: '1px solid #e5e7eb',
-    backgroundColor: '#fff',
-  },
-  termText: {
-    fontSize: '14px',
-    lineHeight: '1.7',
-    color: '#374151',
-    margin: 0,
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  },
-  modal: {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    maxWidth: '600px',
-    width: '100%',
-    maxHeight: '90vh',
-    overflow: 'auto',
-    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '20px 24px',
-    borderBottom: '1px solid #e5e7eb',
-  },
-  modalTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: 0,
-  },
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#6b7280',
-    padding: '4px 8px',
-  },
-  form: {
-    padding: '24px',
-  },
-  formGroup: {
-    marginBottom: '20px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: '8px',
-  },
-  select: {
-    width: '100%',
-    padding: '10px 12px',
-    fontSize: '14px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    backgroundColor: '#fff',
-    color: '#111827',
-    outline: 'none',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    fontSize: '14px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  textarea: {
-    width: '100%',
-    padding: '10px 12px',
-    fontSize: '14px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  },
-  modalActions: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-    marginTop: '24px',
-  },
-  cancelBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  saveBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  loadingOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2000,
-  },
-  loadingBox: {
-    backgroundColor: '#fff',
-    padding: '24px 40px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    fontSize: '16px',
-    fontWeight: '600',
-    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-  },
-};
-
-export default TermsConditions;
+export default TermsConditions

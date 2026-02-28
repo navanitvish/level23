@@ -98,9 +98,12 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const location = useLocation()
   const { user, logout } = useAuth()
 
-  const role   = user?.role === 'sales' ? 'sales' : 'admin'
+  // ✅ Fix: Map user.role correctly
+  // Backend sends: role='admin' or role='user'
+  // We map 'user' → 'sales' for sidebar menu
+  const role = user?.role === 'admin' ? 'admin' : 'sales'
   const config = roleConfig[role]
-  const menu   = config.menu
+  const menu = config.menu
 
   return (
     <>
@@ -115,7 +118,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           {/* ── Header ── */}
           <div className="flex items-center px-5 h-16 border-b border-white/10">
             <div className="h-9 w-9 bg-white/20 rounded-xl flex items-center justify-center ring-2 ring-white/30 flex-shrink-0">
-              <span className="text-white font-bold text-sm">LE</span>
+             <img src="" alt=""/>
             </div>
             <div className="ml-3 flex-1 min-w-0">
               <p className="text-sm font-bold text-white truncate">LEVEL23</p>

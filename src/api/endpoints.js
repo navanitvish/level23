@@ -67,18 +67,19 @@ export const termsApi = {
 
 // Privacy Policy
 export const policyApi = {
-  getAll:  ()         => axiosInstance.get("/policies"),
-  create:  (data)     => axiosInstance.post("/policies", data),
-  update:  (id, data) => axiosInstance.put(`/policies/${id}`, data),
-  remove:  (id)       => axiosInstance.delete(`/policies/${id}`),
+  getAll:   () => axiosInstance.get("/privacy-and-policies/getAll"),
+  getById:  (id) => axiosInstance.get(`/privacy-and-policies/get/${id}`),
+  create:   (data) => axiosInstance.post("/privacy-and-policies/create", data),
+  update:   (id, data) => axiosInstance.put(`/privacy-and-policies/update/${id}`),
+  remove:   (id) => axiosInstance.delete(`/privacy-and-policies/delete/${id}`),
 }
 
 // FAQ
 export const faqApi = {
-  getAll:  ()         => axiosInstance.get("/faqs"),
-  create:  (data)     => axiosInstance.post("/faqs", data),
-  update:  (id, data) => axiosInstance.put(`/faqs/${id}`, data),
-  remove:  (id)       => axiosInstance.delete(`/faqs/${id}`),
+  getAll:  ()        => axiosInstance.get('/faqs/getAll'),
+  create:  (fd)      => axiosInstance.post('/faqs/create', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update:  (id, fd)  => axiosInstance.put(`/faqs/update/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  remove:  (id)      => axiosInstance.delete(`/faqs/delete/${id}`),
 }
 
 // Also added: aboutApi, contactApi

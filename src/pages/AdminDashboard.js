@@ -1,287 +1,463 @@
-import React from 'react';
+// src/pages/Dashboard.jsx
 
-const RealEstateCRM = () => {
-  const stats = [
-    { name: 'Total Properties', value: '1,234', change: '+12%', changeType: 'increase', icon: 'building', color: 'blue' },
-    { name: 'Active Listings', value: '56', change: '+8%', changeType: 'increase', icon: 'home', color: 'emerald' },
-    { name: 'Monthly Revenue', value: '₹45,67,800', change: '+23%', changeType: 'increase', icon: 'rupee', color: 'violet' },
-    { name: 'Closing Rate', value: '98%', change: '+2%', changeType: 'increase', icon: 'chart', color: 'amber' },
-  ];
+import { useQuery } from '@tanstack/react-query'
+import {
+  Building2, Users, TrendingUp,
+  Clock, CheckCircle,  FileText, HelpCircle,
+  ArrowUpRight, ArrowDownRight,
+  BarChart2, PieChart, Activity,
+   Loader2, MapPin, Award, 
+} from 'lucide-react'
+import {
+  projectApi, unitApi, userApi, demandLetterApi,
+  costSheetApi, faqApi
+} from '../api/endpoints'
 
-  const recentActivities = [
-    { id: 1, user: 'Priya Sharma', action: 'Added luxury villa in Banjara Hills', time: '2 minutes ago', type: 'new', avatar: 'PS' },
-    { id: 2, user: 'Rajesh Kumar', action: 'Closed deal - 3BHK Apartment', time: '15 minutes ago', type: 'sale', avatar: 'RK' },
-    { id: 3, user: 'Anita Desai', action: 'Scheduled site visit for client', time: '1 hour ago', type: 'visit', avatar: 'AD' },
-    { id: 4, user: 'Vikram Singh', action: 'Updated property pricing', time: '2 hours ago', type: 'update', avatar: 'VS' },
-    { id: 5, user: 'Meera Patel', action: 'Uploaded new property images', time: '3 hours ago', type: 'new', avatar: 'MP' },
-  ];
+// ─── HELPERS ──────────────────────────────────────────────────
+const toArr = (res) => {
+  if (Array.isArray(res))             return res
+  if (Array.isArray(res?.data))       return res.data
+  if (Array.isArray(res?.data?.data)) return res.data.data
+  return []
+}
+const inr = (n) => {
+  const num = parseFloat(n || 0)
+  if (num >= 10000000) return '₹' + (num/10000000).toFixed(1) + ' Cr'
+  if (num >= 100000)   return '₹' + (num/100000).toFixed(1) + ' L'
+  return '₹' + num.toLocaleString('en-IN')
+}
+// const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short' }) : '—'
 
-  const getIcon = (iconName) => {
-    const icons = {
-      building: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-      home: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
-      rupee: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1",
-      chart: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-    };
-    return icons[iconName];
-  };
+// ─── MINI STAT CARD ───────────────────────────────────────────
+const StatCard = ({ label, value, sub, gradient, Icon, trend, trendUp }) => (
+  <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-all group">
+    <div className="flex items-start justify-between mb-4">
+      <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
+        <Icon size={20} className="text-white" />
+      </div>
+      {trend !== undefined && (
+        <span className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+          {trendUp ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}{trend}%
+        </span>
+      )}
+    </div>
+    <p className="text-2xl font-black text-gray-900 mb-0.5">{value}</p>
+    <p className="text-sm font-medium text-gray-500">{label}</p>
+    {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+  </div>
+)
 
-  const getColorClasses = (color) => {
-    const colors = {
-      blue: {
-        gradient: 'from-blue-500 to-blue-600',
-        bg: 'bg-blue-50',
-        text: 'text-blue-600',
-        ring: 'ring-blue-100'
-      },
-      emerald: {
-        gradient: 'from-emerald-500 to-emerald-600',
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-600',
-        ring: 'ring-emerald-100'
-      },
-      violet: {
-        gradient: 'from-violet-500 to-violet-600',
-        bg: 'bg-violet-50',
-        text: 'text-violet-600',
-        ring: 'ring-violet-100'
-      },
-      amber: {
-        gradient: 'from-amber-500 to-amber-600',
-        bg: 'bg-amber-50',
-        text: 'text-amber-600',
-        ring: 'ring-amber-100'
-      }
-    };
-    return colors[color];
-  };
+// ─── UNIT STATUS DONUT ────────────────────────────────────────
+const UnitDonut = ({ available, hold, sold, total }) => {
+  const avPct   = total > 0 ? (available / total * 100) : 0
+  const holdPct = total > 0 ? (hold      / total * 100) : 0
+  const soldPct = total > 0 ? (sold      / total * 100) : 0
 
-  const getActivityIcon = (type) => {
-    const config = {
-      new: { bg: 'bg-blue-500', icon: 'M12 4v16m8-8H4' },
-      sale: { bg: 'bg-green-500', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-      visit: { bg: 'bg-purple-500', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-      update: { bg: 'bg-orange-500', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' }
-    };
-    return config[type] || config.new;
-  };
+  const r = 52, cx = 64, cy = 64
+  const circ = 2 * Math.PI * r
+  const av   = circ * avPct   / 100
+  const ho   = circ * holdPct / 100
+  const so   = circ * soldPct / 100
+
+  let offset = 0
+  const segments = [
+    { len: so, color: '#ef4444', label: 'Sold',      val: sold,      off: offset },
+    { len: ho, color: '#f59e0b', label: 'Hold',      val: hold,      off: (offset += so) },
+    { len: av, color: '#10b981', label: 'Available', val: available, off: (offset += ho) },
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Stats Grid - Modern Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          {stats.map((stat) => {
-            const colorClass = getColorClasses(stat.color);
-            return (
-              <div 
-                key={stat.name} 
-                className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 overflow-hidden"
-              >
-                {/* Decorative gradient background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${colorClass.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${colorClass.bg} ${colorClass.ring} ring-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <svg 
-                        className={`w-6 h-6 ${colorClass.text}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d={getIcon(stat.icon)} 
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {stat.change}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">{stat.name}</p>
-                    <p className="text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+    <div className="flex items-center gap-6">
+      <div className="relative flex-shrink-0">
+        <svg width={128} height={128} viewBox="0 0 128 128">
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f3f4f6" strokeWidth={14} />
+          {segments.map((s, i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={s.color} strokeWidth={14}
+              strokeDasharray={`${s.len} ${circ - s.len}`}
+              strokeDashoffset={-s.off}
+              strokeLinecap="round"
+              style={{ transform: 'rotate(-90deg)', transformOrigin: '64px 64px', transition: 'stroke-dasharray 0.6s ease' }} />
+          ))}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <p className="text-2xl font-black text-gray-900">{total}</p>
+          <p className="text-xs text-gray-400 font-medium">Total</p>
         </div>
-
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          
-          {/* Recent Activities - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-              <div className="px-6 py-5 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Recent Activities</h2>
-                    <p className="text-sm text-gray-500 mt-1">Latest updates from your team</p>
-                  </div>
-                  <button className="text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                    View All
-                  </button>
-                </div>
+      </div>
+      <div className="space-y-2.5 flex-1">
+        {[
+          { label: 'Available', val: available, pct: avPct,   dot: 'bg-emerald-500' },
+          { label: 'On Hold',   val: hold,      pct: holdPct, dot: 'bg-amber-500'   },
+          { label: 'Sold',      val: sold,      pct: soldPct, dot: 'bg-red-500'     },
+        ].map(({ label, val, pct, dot }) => (
+          <div key={label} className="flex items-center gap-2.5">
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dot}`} />
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-semibold text-gray-600">{label}</span>
+                <span className="text-xs font-bold text-gray-900">{val}</span>
               </div>
-              <div className="divide-y divide-gray-50">
-                {recentActivities.map((activity) => {
-                  const activityConfig = getActivityIcon(activity.type);
-                  return (
-                    <div 
-                      key={activity.id} 
-                      className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 group"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="relative flex-shrink-0">
-                          <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                            {activity.avatar}
-                          </div>
-                          <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${activityConfig.bg} rounded-lg border-2 border-white shadow-sm flex items-center justify-center`}>
-                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={activityConfig.icon} />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            {activity.user}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-0.5 line-clamp-1">
-                            {activity.action}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {activity.time}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${dot}`} style={{ width: `${pct}%`, transition: 'width 0.6s ease' }} />
               </div>
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-          {/* Quick Actions - Takes 1 column */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full p-4 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 hover:border-blue-300 transition-all duration-200 text-left group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">Add Property</h4>
-                      <p className="text-xs text-gray-500">List new property</p>
-                    </div>
-                  </div>
-                </button>
+// ═══════════════════════════════════════════════════════════════
+const Dashboard = () => {
 
-                <button className="w-full p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100 hover:border-emerald-300 transition-all duration-200 text-left group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">Manage Clients</h4>
-                      <p className="text-xs text-gray-500">View all clients</p>
-                    </div>
-                  </div>
-                </button>
+  // ── QUERIES ──
+  const { data: projects = [], isLoading: pLoad } = useQuery({
+    queryKey: ['projects'],
+    queryFn:  async () => toArr(await projectApi.getAll()),
+  })
 
-                <button className="w-full p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100 hover:border-purple-300 transition-all duration-200 text-left group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">View Reports</h4>
-                      <p className="text-xs text-gray-500">Analytics & insights</p>
-                    </div>
-                  </div>
-                </button>
+  const { data: allUnits = [], isLoading: uLoad } = useQuery({
+    queryKey: ['all-units-dashboard'],
+    queryFn:  async () => {
+      if (!projects.length) return []
+      const res = await Promise.all(
+        projects.map(p => unitApi.getAll({ projectId: p._id || p.id }).then(toArr).catch(() => []))
+      )
+      return res.flat()
+    },
+    enabled: projects.length > 0,
+  })
 
-                <button className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 hover:border-amber-300 transition-all duration-200 text-left group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-sm">Schedule Visit</h4>
-                      <p className="text-xs text-gray-500">Book site tour</p>
-                    </div>
-                  </div>
-                </button>
-              </div>
+  const { data: salesmen = [] } = useQuery({
+    queryKey: ['users-salesman'],
+    queryFn:  async () => toArr(await userApi.getAll('salesman')),
+  })
+
+  const { data: demandLetters = [] } = useQuery({
+    queryKey: ['demand-letters'],
+    queryFn:  async () => toArr(await demandLetterApi.getAll()),
+  })
+
+  const { data: costSheets = [] } = useQuery({
+    queryKey: ['cost-sheets', 1],
+    queryFn:  async () => {
+      const r = await costSheetApi.getAll({ page: 1, limit: 100 })
+      return toArr(r?.data?.data || r?.data || r)
+    },
+  })
+
+  const { data: faqs = [] } = useQuery({
+    queryKey: ['faqs'],
+    queryFn:  async () => toArr(await faqApi.getAll()),
+  })
+
+  const isLoading = pLoad || uLoad
+
+  // ── COMPUTED ──
+  const unitStats = {
+    total:     allUnits.length,
+    available: allUnits.filter(u => u.status === 'available').length,
+    hold:      allUnits.filter(u => u.status === 'hold').length,
+    sold:      allUnits.filter(u => u.status === 'sold').length,
+  }
+
+  const totalRevenue = allUnits
+    .filter(u => u.status === 'sold')
+    .reduce((s, u) => s + parseFloat(u.saleableArea || 0) * 16000, 0)
+
+  const demandStats = {
+    total:   demandLetters.length,
+    pending: demandLetters.filter(l => l.paymentStatus === 'pending').length,
+    paid:    demandLetters.filter(l => l.paymentStatus === 'paid').length,
+  }
+
+  const soldPct = unitStats.total > 0 ? Math.round(unitStats.sold / unitStats.total * 100) : 0
+
+  // Recent demand letters (last 5)
+  const recentLetters = [...demandLetters]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5)
+
+  // Per-project stats
+  const projectStats = projects.map(p => {
+    const pId = p._id || p.id
+    const pUnits = allUnits.filter(u => u.projectId === pId || u.project?._id === pId)
+    return {
+      ...p,
+      total:     pUnits.length,
+      available: pUnits.filter(u => u.status === 'available').length,
+      hold:      pUnits.filter(u => u.status === 'hold').length,
+      sold:      pUnits.filter(u => u.status === 'sold').length,
+    }
+  })
+
+  const PAY_BADGE = {
+    pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    partial: 'bg-blue-50 text-blue-700 border-blue-200',
+    paid:    'bg-emerald-50 text-emerald-700 border-emerald-200',
+  }
+
+  return (
+    <div className="space-y-6">
+
+      {/* ─── HEADER ──────────────────────────────── */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 rounded-2xl p-7 text-white">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <p className="text-slate-400 text-sm mb-1">Good morning 👋</p>
+            <h1 className="text-3xl font-black tracking-tight">Dashboard</h1>
+            <p className="text-slate-400 text-sm mt-1">Real Estate Management Overview</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Quick numbers */}
+            <div className="flex gap-3">
+              {[
+                { label: 'Projects',  val: projects.length,   color: 'from-blue-500 to-cyan-500'    },
+                { label: 'Units',     val: unitStats.total,   color: 'from-violet-500 to-purple-500' },
+                { label: 'Salesmen',  val: salesmen.length,   color: 'from-emerald-500 to-green-500' },
+              ].map(({ label, val, color }) => (
+                <div key={label} className="bg-white/10 border border-white/15 rounded-xl px-4 py-3 text-center min-w-[80px]">
+                  <p className="text-2xl font-black text-white">{isLoading ? '—' : val}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+        <div className="absolute -top-10 -right-10 w-52 h-52 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+      </div>
 
-            {/* Performance Summary */}
-            <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl shadow-lg p-6 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
+      {/* ─── STAT CARDS ──────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      
+        <StatCard label="Total Units"     value={isLoading ? '…' : unitStats.total}     sub={`${soldPct}% sold`}                          gradient="from-blue-600 to-cyan-500"     Icon={Building2}     />
+        <StatCard label="Available Units" value={isLoading ? '…' : unitStats.available} sub="Ready to book"                               gradient="from-emerald-500 to-green-400" Icon={CheckCircle}   trendUp={true}  trend={soldPct > 0 ? 100-soldPct : undefined} />
+        <StatCard label="On Hold"         value={isLoading ? '…' : unitStats.hold}      sub="Booking in progress"                         gradient="from-amber-500 to-orange-400"  Icon={Clock}         />
+        <StatCard label="Sold Units"      value={isLoading ? '…' : unitStats.sold}      sub={inr(totalRevenue) + ' est. revenue'}         gradient="from-red-500 to-rose-400"      Icon={TrendingUp}    trendUp={soldPct > 50} trend={soldPct} />
+        
+      </div>
+
+      {/* ─── ROW 2: Donut + Demand Letters ────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* Unit Status Donut */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
+              <PieChart size={15} className="text-white" />
+            </div>
+            <h2 className="font-bold text-gray-900">Unit Status</h2>
+          </div>
+          {isLoading
+            ? <div className="flex justify-center py-8"><Loader2 className="animate-spin text-blue-500" /></div>
+            : <UnitDonut {...unitStats} />
+          }
+        </div>
+
+        {/* Demand Letter Stats */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-500 rounded-lg flex items-center justify-center">
+              <FileText size={15} className="text-white" />
+            </div>
+            <h2 className="font-bold text-gray-900">Demand Letters</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Total Letters',    val: demandStats.total,   color: 'bg-blue-500',    bg: 'bg-blue-50',    text: 'text-blue-700'    },
+              { label: 'Pending Payment',  val: demandStats.pending, color: 'bg-amber-500',   bg: 'bg-amber-50',   text: 'text-amber-700'   },
+              { label: 'Fully Paid',       val: demandStats.paid,    color: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+            ].map(({ label, val, color, bg, text }) => (
+              <div key={label} className={`flex items-center justify-between ${bg} rounded-xl px-4 py-3`}>
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${color}`} />
+                  <span className={`text-sm font-semibold ${text}`}>{label}</span>
+                </div>
+                <span className={`text-xl font-black ${text}`}>{val}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+            <p className="text-xs text-gray-500 font-medium">Cost Sheets Generated</p>
+            <p className="text-2xl font-black text-gray-900 mt-0.5">{costSheets.length}</p>
+          </div>
+        </div>
+
+        {/* Quick Numbers */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center">
+              <Activity size={15} className="text-white" />
+            </div>
+            <h2 className="font-bold text-gray-900">Quick Stats</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Salesmen',  val: salesmen.length,  Icon: Users,       gradient: 'from-cyan-500 to-blue-500'     },
+              { label: 'FAQs',      val: faqs.length,      Icon: HelpCircle,  gradient: 'from-violet-500 to-purple-500' },
+              { label: 'Projects',  val: projects.length,  Icon: Building2,   gradient: 'from-emerald-500 to-teal-500'  },
+              { label: 'Cost Sheets',val: costSheets.length,Icon: BarChart2,   gradient: 'from-amber-500 to-orange-400'  },
+            ].map(({ label, val, Icon, gradient }) => (
+              <div key={label} className="bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0`}>
+                  <Icon size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">This Month</h3>
-                  <p className="text-blue-100 text-sm">Performance Summary</p>
+                  <p className="text-lg font-black text-gray-900">{val}</p>
+                  <p className="text-xs text-gray-400 font-medium">{label}</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-100 text-sm">Deals Closed</span>
-                  <span className="font-bold text-xl">24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-100 text-sm">Site Visits</span>
-                  <span className="font-bold text-xl">67</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-100 text-sm">New Leads</span>
-                  <span className="font-bold text-xl">152</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-100">vs Last Month</span>
-                  <div className="flex items-center gap-1 text-sm font-semibold">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    +18%
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default RealEstateCRM;
+      {/* ─── ROW 3: Project-wise + Recent Demand ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {/* Project-wise breakdown */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
+                <Building2 size={15} className="text-white" />
+              </div>
+              <h2 className="font-bold text-gray-900">Projects Overview</h2>
+            </div>
+            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">{projects.length} projects</span>
+          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" /></div>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-10"><Building2 className="w-8 h-8 text-gray-200 mx-auto mb-2" /><p className="text-gray-400 text-sm">No projects yet</p></div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {projectStats.map(p => {
+                const pct = p.total > 0 ? Math.round(p.sold / p.total * 100) : 0
+                return (
+                  <div key={p._id||p.id} className="px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{p.name}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                          <MapPin size={10} /> {p.location || p.address || 'Location N/A'}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{pct}% sold</span>
+                    </div>
+                    <div className="flex items-center gap-4 mb-2">
+                      {[
+                        { label: 'Total',  val: p.total,     color: 'text-gray-900' },
+                        { label: 'Avail',  val: p.available, color: 'text-emerald-600' },
+                        { label: 'Hold',   val: p.hold,      color: 'text-amber-600' },
+                        { label: 'Sold',   val: p.sold,      color: 'text-red-600' },
+                      ].map(({ label, val, color }) => (
+                        <div key={label} className="text-center">
+                          <p className={`text-sm font-black ${color}`}>{val}</p>
+                          <p className="text-xs text-gray-400">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* progress bar */}
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-red-500 transition-all" style={{ width: `${p.total > 0 ? p.sold/p.total*100 : 0}%` }} />
+                      <div className="h-full bg-amber-400 transition-all" style={{ width: `${p.total > 0 ? p.hold/p.total*100 : 0}%` }} />
+                      <div className="h-full bg-emerald-500 transition-all" style={{ width: `${p.total > 0 ? p.available/p.total*100 : 0}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Demand Letters */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-500 rounded-lg flex items-center justify-center">
+                <FileText size={15} className="text-white" />
+              </div>
+              <h2 className="font-bold text-gray-900">Recent Demand Letters</h2>
+            </div>
+            <span className="text-xs font-semibold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">Last {recentLetters.length}</span>
+          </div>
+          {recentLetters.length === 0 ? (
+            <div className="text-center py-10"><FileText className="w-8 h-8 text-gray-200 mx-auto mb-2" /><p className="text-gray-400 text-sm">No demand letters yet</p></div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {recentLetters.map(l => (
+                <div key={l._id||l.id} className="px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span className="text-violet-700 font-black text-xs">{(l.customer?.name||'?')[0].toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{l.customer?.name || '—'}</p>
+                        <p className="text-xs text-gray-400">
+                          {l.unit?.name || '—'} · {l.project?.name || '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-gray-900">₹{(l.totalConsideration||0).toLocaleString('en-IN')}</p>
+                      <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full border capitalize ${PAY_BADGE[l.paymentStatus]||PAY_BADGE.pending}`}>
+                        {l.paymentStatus||'pending'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── ROW 4: Salesman List ──────────────── */}
+      {salesmen.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                <Users size={15} className="text-white" />
+              </div>
+              <h2 className="font-bold text-gray-900">Sales Team</h2>
+            </div>
+            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">{salesmen.length} active</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-0 divide-x divide-y divide-gray-50">
+            {salesmen.slice(0, 10).map(s => {
+              const soldByThis = allUnits.filter(u => u.soldByUserId === (s._id||s.id) || u.holdByUserId === (s._id||s.id)).length
+              return (
+                <div key={s._id||s.id} className="p-4 hover:bg-gray-50/50 transition-colors">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-black text-sm">{(s.name||'?')[0].toUpperCase()}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{s.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{s.mobile || s.email || 'Salesman'}</p>
+                    </div>
+                  </div>
+                  {soldByThis > 0 && (
+                    <div className="flex items-center gap-1 bg-emerald-50 rounded-lg px-2 py-1">
+                      <Award size={11} className="text-emerald-500" />
+                      <span className="text-xs font-bold text-emerald-700">{soldByThis} units assigned</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default Dashboard
